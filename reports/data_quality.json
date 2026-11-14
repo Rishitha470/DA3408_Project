@@ -22,11 +22,11 @@
     "num_blocks": 8
   },
   "timings_s": {
-    "read_s": 41.833,
-    "validate_s": 3.961,
-    "clean_s": 1.799,
-    "total_s": 56.671
+    "read_s": 7.164,
+    "validate_s": 2.663,
+    "clean_s": 1.337,
+    "total_s": 17.872
   },
-  "throughput_rows_per_s": 4476.4,
-  "ray_processing_rows_per_s": 5330.3
+  "throughput_rows_per_s": 14194.4,
+  "ray_processing_rows_per_s": 22723.2
 }

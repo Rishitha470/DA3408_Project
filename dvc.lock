@@ -77,8 +77,8 @@ stages:
       nfiles: 4
     - path: reports/data_quality.json
       hash: md5
-      md5: c88b2d99d320ac5fe9db70570173a311
-      size: 633
+      md5: e6e2da216c362dee76f19f3f68cea405
+      size: 634
       isexec: true
   train:
     cmd: python -m src.models.train
@@ -141,13 +141,13 @@ stages:
     outs:
     - path: models
       hash: md5
-      md5: 23b8f6abbb957e75c279169e5b505383.dir
-      size: 314843
+      md5: 0a62ff3d68378d265d3d32fe74de686b.dir
+      size: 313481
       nfiles: 31
     - path: reports/model_comparison.json
       hash: md5
-      md5: d6f901e8243c7caf6503d7b02eedccc6
-      size: 2823
+      md5: 552989dee9bf3bfc1e83e6785b26e995
+      size: 2822
       isexec: true
   evaluate:
     cmd: python -m src.models.evaluate
@@ -159,13 +159,13 @@ stages:
       nfiles: 4
     - path: models
       hash: md5
-      md5: 23b8f6abbb957e75c279169e5b505383.dir
-      size: 314843
+      md5: 0a62ff3d68378d265d3d32fe74de686b.dir
+      size: 313481
       nfiles: 31
     - path: src/models/evaluate.py
       hash: md5
-      md5: 63b67778d274cb08b4b2f7167a16bc25
-      size: 6850
+      md5: fad8b6d5f53d9cf136463122762c73c9
+      size: 5646
       isexec: true
     params:
       params.yaml:
@@ -183,7 +183,7 @@ stages:
       isexec: true
     - path: reports/metrics.json
       hash: md5
-      md5: f6ad8c572d15d565f8491fefdf366fc6
+      md5: 6bee00cbb274eb6195514d21de5e1843
       size: 438
       isexec: true
     - path: reports/plots/confusion.csv
