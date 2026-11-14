@@ -1,0 +1,82 @@
+# DVC pipeline (DAG): ingest -> process -> train -> evaluate
+#   dvc repro            run only the stages whose code, data or params changed
+#   dvc dag              show the DAG
+#   dvc metrics show     test metrics / data quality
+#   dvc plots show       ROC, precision-recall, confusion matrix
+#   dvc exp run --set-param train.threshold_beta=1.5     experiment with a parameter
+stages:
+  ingest:
+    cmd: python -m src.data.ingest
+    deps:
+      - src/data/ingest.py
+      - src/data/synthetic.py
+    params:
+      - seed
+      - data
+    outs:
+      - data/raw/diabetes.csv
+    metrics:
+      - reports/ingest.json:
+          cache: false
+
+  process:
+    cmd: python -m src.data.process
+    deps:
+      - data/raw/diabetes.csv
+      - src/data/process.py
+      - src/common/schema.py
+      - src/common/drift.py
+    params:
+      - seed
+      - process
+    outs:
+      - data/processed
+    metrics:
+      - reports/data_quality.json:
+          cache: false
+
+  train:
+    cmd: python -m src.models.train
+    deps:
+      - data/processed
+      - src/models/train.py
+      - src/models/pyfunc.py
+      - src/common/features.py
+      - src/common/schema.py
+      - docker/requirements-model.txt
+    params:
+      - seed
+      - train
+    outs:
+      - models
+    metrics:
+      - reports/model_comparison.json:
+          cache: false
+
+  evaluate:
+    cmd: python -m src.models.evaluate
+    deps:
+      - models
+      - data/processed
+      - src/models/evaluate.py
+    params:
+      - evaluate
+    metrics:
+      - reports/metrics.json:
+          cache: false
+      - reports/acceptance.json:
+          cache: false
+    plots:
+      - reports/plots/roc.csv:
+          x: fpr
+          y: tpr
+          cache: false
+      - reports/plots/pr.csv:
+          x: recall
+          y: precision
+          cache: false
+      - reports/plots/confusion.csv:
+          template: confusion
+          x: actual
+          y: predicted
+          cache: false

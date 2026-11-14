@@ -1,0 +1,128 @@
+# Diabetes Risk Prediction - all runtime services.
+#   docker compose up -d --build                 start everything
+#   docker compose --profile pipeline run --rm pipeline     (optional) run `dvc repro` in a container
+# Before the first start, train a model (models/ must exist) and set PREDICTION_LOG_KEY in .env.
+name: diabetes-risk
+
+x-restart: &restart
+  restart: unless-stopped
+
+services:
+  mlflow:                                   # experiment tracking + model registry (UI on :5000)
+    <<: *restart
+    build: { context: ., dockerfile: docker/mlflow.Dockerfile }
+    image: diabetes-risk/mlflow:1.0
+    command: >
+      mlflow server --host 0.0.0.0 --port 5000
+      --backend-store-uri sqlite:////mlflow/mlflow.db
+      --serve-artifacts --artifacts-destination /mlflow/artifacts
+      --allowed-hosts "*"
+    ports: ["5000:5000"]
+    volumes: [mlflow-data:/mlflow]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:5000/health', timeout=2)"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  model-server:                             # MLflow model serving (REST /invocations) - the inference engine
+    <<: *restart
+    build: { context: ., dockerfile: docker/mlflow.Dockerfile }   # same image as mlflow (cached)
+    image: diabetes-risk/mlflow:1.0
+    command: mlflow models serve -m /models/mlflow_model -h 0.0.0.0 -p 5001 --env-manager local
+    ports: ["5001:5001"]
+    volumes: ["./models:/models:ro"]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:5001/ping', timeout=2)"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  backend:                                  # FastAPI REST API used by the UI
+    <<: *restart
+    build: { context: ., dockerfile: backend/Dockerfile }
+    image: diabetes-risk/backend:1.0
+    depends_on: { model-server: { condition: service_healthy } }
+    environment:
+      INFERENCE_MODE: mlflow
+      MODEL_SERVER_URL: http://model-server:5001/invocations
+      PREDICTION_LOG_KEY: ${PREDICTION_LOG_KEY:?set PREDICTION_LOG_KEY in .env}
+      ADMIN_TOKEN: ${ADMIN_TOKEN:-}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:8080,http://127.0.0.1:8080}
+      DEPENDENCY_URLS: >-
+        model-server=http://model-server:5001/ping,mlflow=http://mlflow:5000/health,frontend=http://frontend/healthz,prometheus=http://prometheus:9090/-/healthy,grafana=http://grafana:3000/api/health
+      TOOL_LINKS: MLflow=http://localhost:5000,Grafana=http://localhost:3000,Prometheus=http://localhost:9090,Alertmanager=http://localhost:9093
+    ports: ["8000:8000"]
+    volumes:
+      - ./models:/app/models:ro
+      - ./reports:/app/reports:ro
+      - ./dvc.yaml:/app/dvc.yaml:ro
+      - ./logs:/app/logs
+
+  frontend:                                 # static web UI (nginx); knows the backend only by URL
+    <<: *restart
+    build: { context: ./frontend }
+    image: diabetes-risk/frontend:1.0
+    depends_on: [backend]
+    environment:
+      API_BASE_URL: ${API_BASE_URL:-http://localhost:8000}
+    ports: ["8080:80"]
+
+  prometheus:
+    <<: *restart
+    image: prom/prometheus:v2.53.0
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=15d
+    ports: ["9090:9090"]
+    volumes:
+      - ./monitoring/prometheus:/etc/prometheus:ro
+      - prometheus-data:/prometheus
+
+  alertmanager:
+    <<: *restart
+    image: prom/alertmanager:v0.27.0
+    command: [--config.file=/etc/alertmanager/alertmanager.yml]
+    ports: ["9093:9093"]
+    volumes: ["./monitoring/alertmanager:/etc/alertmanager:ro"]
+
+  grafana:
+    <<: *restart
+    image: grafana/grafana:11.1.0
+    depends_on: [prometheus]
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-admin}
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/diabetes-risk.json
+    ports: ["3000:3000"]
+    volumes:
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana-data:/var/lib/grafana
+
+  node-exporter:                            # host/container CPU, memory, disk
+    <<: *restart
+    image: prom/node-exporter:v1.8.1
+    ports: ["9100:9100"]
+
+  pipeline:                                 # optional, only with --profile pipeline
+    profiles: ["pipeline"]
+    build: { context: ., dockerfile: docker/pipeline.Dockerfile }
+    image: diabetes-risk/pipeline:1.0
+    depends_on: { mlflow: { condition: service_healthy } }
+    environment:
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+    shm_size: 2gb                           # Ray uses shared memory
+    working_dir: /workspace
+    volumes: [".:/workspace"]
+    command: dvc repro
+
+volumes:
+  mlflow-data:
+  prometheus-data:
+  grafana-data:

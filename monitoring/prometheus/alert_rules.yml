@@ -1,0 +1,45 @@
+groups:
+  - name: diabetes-risk-api
+    rules:
+      - record: job:http_error_ratio:rate5m
+        expr: |
+          sum(rate(http_requests_total{endpoint="/api/v1/predict",status=~"5.."}[5m]))
+          / clamp_min(sum(rate(http_requests_total{endpoint="/api/v1/predict"}[5m])), 1e-9)
+      - alert: BackendDown
+        expr: up{job="backend"} == 0
+        for: 30s
+        labels: { severity: critical }
+        annotations: { summary: "Backend API is not responding to Prometheus scrapes" }
+      - alert: ModelServerDown
+        expr: dependency_up{service="model-server"} == 0
+        for: 30s
+        labels: { severity: critical }
+        annotations: { summary: "MLflow model server is unreachable - predictions return 503" }
+      - alert: HighErrorRate
+        expr: job:http_error_ratio:rate5m > 0.05
+        for: 1m
+        labels: { severity: warning }
+        annotations: { summary: "More than 5% of prediction requests fail" }
+      - alert: HighLatencyP95
+        expr: histogram_quantile(0.95, sum by (le) (rate(http_request_duration_seconds_bucket{endpoint="/api/v1/predict"}[5m]))) > 0.5
+        for: 2m
+        labels: { severity: warning }
+        annotations: { summary: "p95 prediction latency above 500 ms" }
+  - name: diabetes-risk-model
+    rules:
+      - alert: DataDriftDetected
+        expr: data_drift_detected == 1
+        for: 1m
+        labels: { severity: warning }
+        annotations: { summary: "Input data drift (PSI >= 0.2) - run the drift monitor with --retrain" }
+      - alert: PipelineStageFailed
+        expr: pipeline_stage_last_status == 0
+        labels: { severity: warning }
+        annotations: { summary: "Last run of pipeline stage {{ $labels.stage }} failed" }
+      - alert: HighRiskShareSpike
+        expr: |
+          sum(rate(model_predictions_total{risk_level="high"}[15m]))
+          / clamp_min(sum(rate(model_predictions_total[15m])), 1e-9) > 0.6
+        for: 5m
+        labels: { severity: info }
+        annotations: { summary: "Unusually many high-risk predictions (possible drift or model issue)" }

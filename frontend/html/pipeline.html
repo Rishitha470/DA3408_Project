@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>How it works - pipeline console</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="topbar"><div class="inner">
+    <a class="brand" href="index.html">Diabetes Risk Check</a>
+    <nav aria-label="Main">
+      <a href="index.html">Check my risk</a>
+      <a href="pipeline.html" aria-current="page">How it works</a>
+      <a href="manual.html">Help</a>
+    </nav>
+  </div></header>
+
+  <main class="wide">
+    <h1>Pipeline console</h1>
+    <p class="lead">How the model was built and how it is doing now: the data and training pipeline,
+      every recorded run, model quality, and changes in the people using the app.</p>
+    <p class="updated" id="updated">Loading...</p>
+    <div class="error-box" id="error" role="alert" hidden></div>
+
+    <section class="panel" style="margin-bottom:1rem">
+      <h2>Pipeline (DVC)</h2>
+      <div class="dag" id="dag"></div>
+      <div class="kpis" id="run-summary"></div>
+      <div id="other-jobs" class="small"></div>
+    </section>
+
+    <div class="grid">
+      <section class="panel"><h2>Data (Ray processing)</h2><div id="data"></div></section>
+      <section class="panel"><h2>Model on unseen test data</h2><div id="test"></div></section>
+    </div>
+
+    <section class="panel" style="margin-top:1rem">
+      <h2>Models compared</h2>
+      <p class="hint">Scores on the validation split. The highlighted model was selected and is served.</p>
+      <div class="table-wrap" id="models"></div>
+    </section>
+
+    <section class="panel" style="margin-top:1rem">
+      <h2>Changes in incoming data (drift)</h2>
+      <div id="drift"></div>
+    </section>
+
+    <section class="panel" style="margin-top:1rem">
+      <h2>Run history</h2>
+      <p class="hint">Every pipeline stage execution, successful or failed (newest first).</p>
+      <div class="table-wrap" id="runs"></div>
+    </section>
+
+    <section class="panel" style="margin-top:1rem">
+      <h2>Tools</h2>
+      <p class="hint">Experiment tracking, live monitoring dashboards and alerts.</p>
+      <div class="tools" id="tools"></div>
+    </section>
+  </main>
+
+  <script src="js/config.js"></script>
+  <script src="js/pipeline.js"></script>
+</body>
+</html>

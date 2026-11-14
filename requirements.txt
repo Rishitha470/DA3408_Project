@@ -1,0 +1,16 @@
+# Development / pipeline environment (Python 3.11 or 3.12). Tested versions, pinned for reproducibility.
+-r docker/requirements-model.txt
+ray[data]==2.60.0
+dvc==3.67.1
+ucimlrepo==0.0.7
+matplotlib==3.11.2
+PyYAML==6.0.3
+fastapi==0.162.2
+uvicorn==0.54.0
+pydantic==2.14.3
+prometheus_client==0.26.0
+requests==2.34.2
+cryptography==50.0.2
+pytest==9.2.0
+httpx==0.28.1
+flake8

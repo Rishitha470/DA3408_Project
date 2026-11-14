@@ -1,0 +1,25 @@
+# MLflow Project: identical, reproducible entry points for development and test environments.
+#   mlflow run . -e train --env-manager local --experiment-name diabetes-risk
+#   mlflow run . --env-manager virtualenv --experiment-name diabetes-risk      (fresh isolated env from python_env.yaml)
+# Always pass --experiment-name diabetes-risk (the experiment the code logs to).
+name: diabetes-risk-prediction
+
+python_env: python_env.yaml
+
+entry_points:
+  main:
+    command: "dvc repro"                       # the whole DVC pipeline
+  ingest:
+    command: "python -m src.data.ingest"
+  process:
+    command: "python -m src.data.process"
+  train:
+    command: "python -m src.models.train"
+  evaluate:
+    command: "python -m src.models.evaluate"
+  drift:
+    command: "python -m src.monitoring.drift_monitor"
+  drift_retrain:
+    command: "python -m src.monitoring.drift_monitor --retrain"
+  test:
+    command: "python scripts/run_tests.py"

@@ -1,0 +1,19 @@
+# DVC-managed data and models (versioned by DVC, not Git)
+/data/raw
+/data/processed
+/data/external
+/models
+# local state
+mlflow.db
+mlruns/
+mlartifacts/
+logs/
+reports/pipeline_runs.jsonl
+reports/drift.json
+reports/tests/
+dvc_plots/
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+.env

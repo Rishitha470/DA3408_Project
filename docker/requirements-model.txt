@@ -1,0 +1,11 @@
+# Runtime dependencies of the trained model (MLflow model server and backend local mode).
+# Pinned to the versions used for training so the pickled pipeline loads identically.
+mlflow==3.18.0
+scikit-learn==1.9.1
+xgboost==3.4.1
+pandas==3.0.6
+numpy==2.5.4
+scipy==1.18.1
+joblib==1.6.0
+cloudpickle==3.1.2
+pyarrow==26.0.1

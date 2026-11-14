@@ -1,0 +1,14 @@
+# Backend API image. Model libraries are included so INFERENCE_MODE=local also works in the container.
+fastapi==0.162.2
+uvicorn==0.54.0
+pydantic==2.14.3
+prometheus_client==0.26.0
+requests==2.34.2
+cryptography==50.0.2
+PyYAML==6.0.3
+pandas==3.0.6
+numpy==2.5.4
+scikit-learn==1.9.1
+xgboost==3.4.1
+scipy==1.18.1
+joblib==1.6.0

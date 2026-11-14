@@ -1,0 +1,8 @@
+# Alerts are shown in the Alertmanager UI (http://localhost:9093). Add an email/Slack receiver here if needed.
+route:
+  receiver: default
+  group_by: [alertname]
+  group_wait: 10s
+  repeat_interval: 1h
+receivers:
+  - name: default

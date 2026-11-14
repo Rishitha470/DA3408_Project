@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Diabetes Risk Check</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="topbar"><div class="inner">
+    <a class="brand" href="index.html">Diabetes Risk Check</a>
+    <nav aria-label="Main">
+      <a href="index.html" aria-current="page">Check my risk</a>
+      <a href="pipeline.html">How it works</a>
+      <a href="manual.html">Help</a>
+    </nav>
+  </div></header>
+
+  <main>
+    <section id="intro">
+      <h1>Find out your diabetes risk in about two minutes</h1>
+      <p class="lead">Answer a few questions about your health and habits. You get a risk level and the
+        changes that would lower it most. Your answers are not linked to your name.</p>
+      <p class="notice">This is a screening tool for awareness. It cannot diagnose diabetes. If you are worried,
+        a simple blood test at a clinic gives a definite answer.</p>
+    </section>
+
+    <section id="wizard" aria-live="polite">
+      <ol class="steps" id="steps" aria-hidden="true"></ol>
+      <p class="step-count" id="step-count"></p>
+      <form class="panel" id="form" novalidate>
+        <div id="step-body"></div>
+        <div class="actions">
+          <button type="button" class="btn btn-ghost" id="back">Back</button>
+          <button type="submit" class="btn btn-primary" id="next">Next</button>
+        </div>
+        <div class="error-box" id="form-error" role="alert" hidden></div>
+      </form>
+    </section>
+
+    <section id="result" hidden aria-live="polite" tabindex="-1"></section>
+  </main>
+
+  <script src="js/config.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

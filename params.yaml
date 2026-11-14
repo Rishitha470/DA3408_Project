@@ -1,0 +1,46 @@
+# All tunable settings of the pipeline. DVC tracks these: changing a value re-runs only the
+# stages that depend on it (dvc repro / dvc exp run --set-param train.threshold_beta=1.5).
+seed: 42
+
+data:
+  source: uci              # uci | csv | synthetic
+  csv_path: data/external/diabetes_binary_health_indicators_BRFSS2015.csv   # used when source=csv
+  synthetic_rows: 20000    # used when source=synthetic (offline smoke runs / tests)
+
+process:
+  num_cpus: 4              # CPUs given to Ray
+  num_blocks: 8            # Ray Dataset blocks processed in parallel
+  drop_duplicates: false   # duplicates are genuine identical survey answers, so kept by default
+  val_size: 0.15
+  test_size: 0.15
+  quality:
+    min_rows: 1000
+    max_invalid_fraction: 0.05
+    min_positive_rate: 0.02
+    max_positive_rate: 0.50
+
+train:
+  experiment_name: diabetes-risk
+  selection_metric: roc_auc      # metric on the validation split used to pick the best model
+  threshold_beta: 2.0            # threshold maximises F-beta; beta > 1 favours recall (fewer missed cases)
+  candidates:
+    logistic_regression:
+      - {C: 0.1}
+      - {C: 1.0}
+    random_forest:
+      - {n_estimators: 100, max_depth: 10, min_samples_leaf: 50}
+      - {n_estimators: 150, max_depth: 12, min_samples_leaf: 100}
+    xgboost:
+      - {n_estimators: 300, max_depth: 4, learning_rate: 0.1}
+      - {n_estimators: 500, max_depth: 6, learning_rate: 0.05}
+
+evaluate:
+  registered_model_name: diabetes-risk-model
+  acceptance:                    # quality gate on the held-out test split
+    min_roc_auc: 0.78
+    min_recall: 0.70
+    min_precision: 0.25
+
+monitoring:
+  drift_min_samples: 100
+  retrain_on_drift: true
