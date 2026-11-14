@@ -27,6 +27,10 @@ It asks 21 short questions about your health and habits and compares your answer
 
 6. On the last screen, press **See my result**.
 
+![The first screen: about you](screenshots/01_app_home.png)
+
+![Answering questions with Yes / No buttons](screenshots/02_app_form_health_conditions.png)
+
 ## Reading your result
 
 - **Risk level** - low (green), moderate (amber) or high (red).
@@ -35,6 +39,8 @@ It asks 21 short questions about your health and habits and compares your answer
 - The score is a comparison with the survey, not the percentage chance that you have diabetes.
 
 To try different answers, press **Change my answers**. To clear everything, press **Start again**.
+
+![An example result: low risk, with the changes that would lower the score most](screenshots/05_app_result.png)
 
 ## What to do next
 

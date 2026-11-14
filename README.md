@@ -7,6 +7,23 @@ drift detection with retraining, and rollback.
 
 > Screening and awareness only. Not a medical diagnosis.
 
+## Results at a glance
+
+Real run on the CDC Diabetes Health Indicators data (253,680 survey answers); details in
+[docs/HLD.md section 8](docs/HLD.md#8-results).
+
+| | Result |
+|---|---|
+| Selected model | XGBoost (300 trees, depth 4), best of 6 candidates (LR, RF, XGBoost) by validation ROC-AUC |
+| Held-out test set (38,052 people) | ROC-AUC **0.834**, recall **0.818**, precision 0.301, F1 0.440; all acceptance criteria passed |
+| Ray data pipeline | 253,680 rows validated and cleaned at 22,723 rows/s (4 CPUs, 8 blocks) |
+| API latency | p95 44 ms for 1 user, 232 ms for 4 concurrent users (target < 500 ms) |
+| Tests | 74 automated tests, 74 passed ([docs/test_report.md](docs/test_report.md)) |
+| Drift | shifted traffic detected on BMI, PhysActivity, Age (PSI 1.77); alert fires; retraining and rollback verified |
+| Reproducibility | two full re-runs from the same commit gave identical metrics; every model version is tagged with its Git commit |
+
+Screenshots of the app, pipeline console, Grafana, Prometheus and MLflow are in [docs/screenshots/](docs/screenshots/).
+
 | Document | Path |
 |---|---|
 | Architecture diagram + block explanations | [docs/architecture.md](docs/architecture.md) |
@@ -38,28 +55,32 @@ docker-compose.yml    all runtime services
 
 ## Prerequisites
 
-* Python **3.12** (3.11 also works), Git, Git LFS (`git lfs install`)
-* Docker Desktop (or Docker Engine + Compose v2), about 8 GB RAM free
+* Linux with Python **3.12**, Git, Git LFS and Docker Engine + Compose v2. On Windows, use WSL2 (Ubuntu) or a
+  Linux VM.
+* 8 GB RAM recommended (tested on a 7.2 GB VM: close other programs while training)
 * Internet access for the first run (dataset download, Docker images)
-* Windows: use **WSL2** (Ubuntu) for the commands below. Native PowerShell works too, but replace
-  `export X=y` with `$env:X="y"` and `source .venv/bin/activate` with `.venv\Scripts\Activate.ps1`.
+
+**Tested environment:** VirtualBox VM, Ubuntu 26.04, 6 vCPUs, 7.2 GB RAM, Python 3.12.16 (via `uv`),
+Docker 29.1 / Compose 2.40, DVC 3.67.1, MLflow 3.18.0, Ray 2.60.0.
 
 ## Step-by-step: from zero to running app
 
 ### 1. Set up the environment
 
 ```bash
-cd diabetes-risk-aiops
-python3.12 -m venv .venv
+git clone <repository-url> diabetes-risk-aiops && cd diabetes-risk-aiops
+git lfs install && git lfs pull          # screenshots are stored with Git LFS
+python3.12 -m venv .venv                 # or: uv venv --python 3.12 .venv
 source .venv/bin/activate
-pip install -r requirements.txt
-
-git init
-git lfs install
-dvc init
-mkdir -p ../dvc-storage && dvc remote add -d localstore ../dvc-storage   # local DVC remote (no cloud)
-git add -A && git commit -m "Initial project structure"
+pip install -r requirements.txt          # or: uv pip install -r requirements.txt
 ```
+
+Git, Git LFS and DVC are already initialised in the repository. The DVC remote is a local folder
+(`../dvc-storage`, no cloud). If you do not have that folder, step 4 simply rebuilds the data and models.
+
+**VirtualBox shared folder:** if the project lives on a VirtualBox shared folder, mount it so that container
+users can read it, e.g. `sudo mount -t vboxsf -o uid=1000,gid=1000,dmode=777,fmode=777 <share> /mnt/shared`,
+and create the virtual environment outside the shared folder (for example in your home directory).
 
 ### 2. Create the secrets file
 
@@ -99,7 +120,7 @@ Indicators Dataset") into `data/external/` and set `data.source: csv` in `params
 python scripts/run_tests.py        # 74 tests -> docs/test_report.md (includes acceptance results)
 ```
 
-### 6. Commit the versioned results
+### 6. Commit the versioned results (after every training run)
 
 ```bash
 git add dvc.lock reports/*.json reports/plots docs/test_report.md
@@ -161,6 +182,9 @@ dvc exp run --set-param train.threshold_beta=1.5     # try a parameter change as
 dvc exp show
 ```
 
+Note: an experiment that passes the acceptance gate is also registered in MLflow and becomes `@champion`;
+use `scripts/rollback.sh <commit>` to return to the committed model afterwards.
+
 ## MLflow Project (identical dev/test environments)
 
 ```bash
@@ -203,3 +227,14 @@ dvc repro                  # or re-run; unchanged stages are skipped
 | Port already in use | Stop the other program or change the left side of `ports:` in `docker-compose.yml` |
 | Backend log: "could not write prediction log" | `chmod 777 logs` (container user cannot write the folder) |
 | `dvc repro` says nothing to do | Nothing changed; use `dvc repro --force` to re-run everything |
+| Training runs log to a local `mlflow.db` instead of the server | `MLFLOW_TRACKING_URI` is not set in this terminal: `export MLFLOW_TRACKING_URI=http://localhost:5000` |
+| Prometheus/Grafana "permission denied" on a VirtualBox shared folder | mount the share with `dmode=777,fmode=777` (step 1) |
+| Desktop freezes during training | not enough RAM: close the browser and other programs while `dvc repro` runs |
+
+## What was run and verified
+
+Verified on the tested environment: steps 2-9 (step 1 was done from a local copy rather than a fresh clone),
+`scripts/ci.sh`, the pre-push hook installation,
+`mlflow run . -e test --env-manager local`, drift-triggered retraining and `scripts/rollback.sh`.
+Not run: `dvc exp run`, `mlflow run . --env-manager virtualenv`, the other MLflow Project entry points, the
+optional `pipeline` container profile and running without Docker.

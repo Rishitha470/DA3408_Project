@@ -12,7 +12,7 @@ header (echoed if the client sends one).
 | GET | `/ready` | Readiness (model loaded) | 200 | 503 |
 | POST | `/api/v1/predict` | Risk prediction for one person | 200 | 422, 503, 500 |
 | GET | `/api/v1/model` | Model card (version, threshold, metrics, importance) | 200 | 503 |
-| POST | `/api/v1/model/reload` | Reload model after retraining (header `X-Admin-Token`) | 200 | 401, 503 |
+| POST | `/api/v1/model/reload` | Reload model after retraining (header `X-Admin-Token`); for the backend run without Docker. In Docker, restart `model-server` and `backend` instead, because DVC recreates the mounted `models/` folder | 200 | 401, 503 |
 | GET | `/api/v1/pipeline` | Pipeline console data | 200 | - |
 | GET | `/api/v1/drift` | Current drift report | 200 | - |
 | GET | `/metrics` | Prometheus metrics (text format) | 200 | - |
@@ -45,7 +45,8 @@ header (echoed if the client sends one).
 | Education | int | 1-6 | Education level |
 | Income | int | 1-8 | Income level |
 
-**Response 200** (example; values depend on the trained model):
+**Response 200** (structure as returned by the deployed model; `threshold` and `model_version` are those of the
+current champion, the probability and factor values are illustrative):
 
 ```json
 {
@@ -53,13 +54,13 @@ header (echoed if the client sends one).
   "probability": 0.937,
   "prediction": 1,
   "risk_level": "high",
-  "threshold": 0.5202,
+  "threshold": 0.4802,
   "top_factors": [
     {"feature": "GenHlth", "label": "General health (1 = excellent, 5 = poor)",
      "current_value": 4.0, "healthier_value": 2.0, "impact": 0.1426}
   ],
   "model_name": "xgboost_0",
-  "model_version": "xgboost_0@8b32ed00",
+  "model_version": "xgboost_0@01297897",
   "disclaimer": "This is a screening and awareness tool, not a medical diagnosis. ..."
 }
 ```
@@ -111,11 +112,12 @@ Response `{"predictions": [{"probability", "prediction", "risk_level", "model_ve
 | `src/common/pipeline_log.py` | `track_stage()` context manager, `read_runs()` |
 | `src/common/reproducibility.py` | `git_commit()`, `git_dirty()`, `file_md5()` |
 | `src/data/ingest.py` | `load_source()`, `main()` |
-| `src/data/process.py` | `invalid_mask()`, `batch_quality()`, `clean_batch()`, `run_ray_pipeline()`, `quality_gate()` |
+| `src/data/process.py` | `invalid_mask()`, `batch_quality()`, `clean_batch()`, `run_ray_pipeline()`, `quality_gate()`, `split_data()` (canonical row order, then seeded stratified split) |
 | `src/models/train.py` | `build_pipeline()`, `tune_threshold()`, `classification_metrics()`, `train_candidate()`, `save_artifacts()` |
 | `src/models/pyfunc.py` | `DiabetesRiskPyfunc` (MLflow PythonModel) |
-| `src/models/evaluate.py` | `check_acceptance()`, `write_plot_data()`, `register()` |
-| `src/monitoring/drift_monitor.py` | batch drift check and retraining trigger |
+| `src/models/evaluate.py` | `check_acceptance()`, `write_plot_data()`, `register()` (retries up to 4 times) -> `_register_once()` (idempotent: reuses an existing version of the same run) |
+| `src/monitoring/drift_monitor.py` | batch drift check (`--last-n`, default `monitoring.drift_window` = 500) and retraining trigger (`--retrain`) |
+| `scripts/rollback.sh` | restore `models/` + reports of a commit, move `@champion`, restart model server and backend |
 | `backend/app/config.py` | `Settings` (all env vars) |
 | `backend/app/predictor.py` | `BasePredictor` -> `LocalPredictor`, `MlflowServerPredictor`; `make_predictor()`; `PredictorError` |
 | `backend/app/explain.py` | `what_if_rows()`, `top_factors()` |

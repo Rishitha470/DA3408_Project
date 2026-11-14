@@ -164,8 +164,8 @@ stages:
       nfiles: 31
     - path: src/models/evaluate.py
       hash: md5
-      md5: fad8b6d5f53d9cf136463122762c73c9
-      size: 5646
+      md5: 63b67778d274cb08b4b2f7167a16bc25
+      size: 6850
       isexec: true
     params:
       params.yaml:

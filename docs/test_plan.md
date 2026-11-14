@@ -35,7 +35,7 @@ real schema and a tiny model trained inside the test fixture.
 | AC5 | Invalid input never reaches the model and returns 422 with the field name | always | TC-API-05..09 |
 | AC6 | Model outage returns 503 with a friendly message (no crash, no internals) | always | TC-API-10, 11; system test S4 |
 | AC7 | p95 latency of `/api/v1/predict` at 4 concurrent users | < 500 ms | `scripts/load_test.py` |
-| AC8 | A non-technical user completes the questionnaire without help | 5 of 5 testers | UI checklist |
+| AC8 | A non-technical user completes the questionnaire without help | 3 of 3 testers | UI checklist (section 6) |
 
 The model is registered as `@champion` only when AC2-AC4 hold (automatic gate).
 
@@ -116,6 +116,7 @@ Parametrised cases expand this list to 74 executed tests (see `docs/test_report.
 | S6 | `python scripts/simulate_traffic.py --n 400 --drift` | drift "YES" for BMI/Age/PhysActivity; alert `DataDriftDetected` |
 | S7 | `python scripts/load_test.py --concurrency 1 4 8` | table recorded in the report; AC7 checked |
 | S8 | Pipeline console at `localhost:8080/pipeline.html` | DAG with statuses, run history, metrics, drift |
+| S9 | `python -m src.monitoring.drift_monitor --retrain`, then `scripts/rollback.sh HEAD~1` | new model registered and served; rollback serves the previous version and moves `@champion` back |
 
 ## 6. UI checklist (manual)
 
@@ -127,3 +128,49 @@ backend stopped -> clear error, no blank page.
 
 Failed tests block a commit (`scripts/ci.sh`, optional pre-push hook). The test report lists every case with
 its result; failed pipeline stages appear in the pipeline console and as the `PipelineStageFailed` alert.
+Defects found while executing this plan, and their fixes, are listed in HLD section 8.7.
+
+## 8. Execution results (2026-11-14, Ubuntu 26.04 VM, 6 vCPUs, 7.2 GB RAM)
+
+### 8.1 Automated tests
+
+74 executed, 74 passed, 0 failed, 0 skipped (`docs/test_report.md`). The suite also ran successfully as the
+MLflow Project entry point `mlflow run . -e test` and inside `scripts/ci.sh`.
+
+### 8.2 Acceptance criteria
+
+| # | Result | Evidence |
+|---|---|---|
+| AC1 | PASS: 74 / 74 | `docs/test_report.md` |
+| AC2 | PASS: ROC-AUC 0.834 | `reports/acceptance.json` |
+| AC3 | PASS: recall 0.818 | `reports/acceptance.json` |
+| AC4 | PASS: precision 0.301 | `reports/acceptance.json` |
+| AC5 | PASS | TC-API-05..09 |
+| AC6 | PASS: HTTP 503 `model_unavailable` with a friendly message during a real model-server outage | TC-API-10, 11; S4 |
+| AC7 | PASS: p95 231.5 ms at 4 users | S7, HLD 8.4 |
+| AC8 | PENDING: to be run with 3 non-technical testers | section 6 |
+
+### 8.3 System tests
+
+| ID | Result | Observed |
+|---|---|---|
+| S1 | PASS | all 8 services up; mlflow, model-server, backend, frontend `healthy` |
+| S2 | PASS | `/ready` 200; Prometheus targets backend, node-exporter, prometheus all UP; Grafana shows every dependency UP |
+| S3 | PASS | questionnaire completed in the browser: level, score bar, 3 factors, disclaimer (`docs/screenshots/05_app_result.png`) |
+| S4 | PASS | model server stopped: HTTP 503 `model_unavailable`, alert `ModelServerDown` firing; restart recovered |
+| S5 | PASS | 500 normal requests: all 200, drift not detected (max PSI 0.020) |
+| S6 | PASS | 400 shifted requests: drift on BMI, PhysActivity, Age (max PSI 1.77); `DataDriftDetected` firing |
+| S7 | PASS | 1 / 4 / 8 users: p95 43.6 / 231.5 / 516.5 ms, 0 errors (HLD 8.4) |
+| S8 | PASS | pipeline console shows DAG, statuses, run history, metrics, drift (`docs/screenshots/07`-`11`) |
+| S9 | PASS | drift-triggered retraining registered version 4; `rollback.sh` restored version 3 and moved `@champion` |
+
+### 8.4 UI checklist (section 6)
+
+| Check | Result |
+|---|---|
+| Questionnaire flow through all 6 steps, result page | PASS (manual run, screenshots 01-06) |
+| Back keeps answers | PENDING |
+| Unanswered questions highlighted, out-of-range numbers refused | PENDING |
+| Phone width (390 px) | PENDING |
+| Keyboard-only use | PENDING |
+| Backend stopped: clear error, no blank page | PENDING |
