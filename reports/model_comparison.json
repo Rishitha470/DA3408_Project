@@ -1,0 +1,116 @@
+{
+  "selection_metric": "roc_auc",
+  "best": "xgboost_0",
+  "candidates": [
+    {
+      "name": "logistic_regression_0",
+      "model_type": "logistic_regression",
+      "params": {
+        "C": 0.1
+      },
+      "run_id": "e66de3d050174d1d9fe233d94967a567",
+      "accuracy": 0.6917,
+      "precision": 0.2886,
+      "recall": 0.828,
+      "f1": 0.4281,
+      "roc_auc": 0.8256,
+      "pr_auc": 0.425,
+      "threshold": 0.4332,
+      "train_time_s": 2.5174,
+      "latency_p95_ms": 7.0126
+    },
+    {
+      "name": "logistic_regression_1",
+      "model_type": "logistic_regression",
+      "params": {
+        "C": 1.0
+      },
+      "run_id": "62b567d1295c4767814beaad9104d5e1",
+      "accuracy": 0.6917,
+      "precision": 0.2886,
+      "recall": 0.828,
+      "f1": 0.4281,
+      "roc_auc": 0.8256,
+      "pr_auc": 0.425,
+      "threshold": 0.4332,
+      "train_time_s": 3.0114,
+      "latency_p95_ms": 6.8521
+    },
+    {
+      "name": "random_forest_0",
+      "model_type": "random_forest",
+      "params": {
+        "n_estimators": 100,
+        "max_depth": 10,
+        "min_samples_leaf": 50
+      },
+      "run_id": "b8a3ca361e0b47088a7aa93e527812da",
+      "accuracy": 0.6795,
+      "precision": 0.2827,
+      "recall": 0.8455,
+      "f1": 0.4237,
+      "roc_auc": 0.8267,
+      "pr_auc": 0.4303,
+      "threshold": 0.4331,
+      "train_time_s": 4.9893,
+      "latency_p95_ms": 124.8457
+    },
+    {
+      "name": "random_forest_1",
+      "model_type": "random_forest",
+      "params": {
+        "n_estimators": 150,
+        "max_depth": 12,
+        "min_samples_leaf": 100
+      },
+      "run_id": "e6bcf4a888a140daaba9482f3bce37a0",
+      "accuracy": 0.6883,
+      "precision": 0.287,
+      "recall": 0.8333,
+      "f1": 0.427,
+      "roc_auc": 0.8268,
+      "pr_auc": 0.4308,
+      "threshold": 0.448,
+      "train_time_s": 7.7382,
+      "latency_p95_ms": 167.515
+    },
+    {
+      "name": "xgboost_0",
+      "model_type": "xgboost",
+      "params": {
+        "n_estimators": 300,
+        "max_depth": 4,
+        "learning_rate": 0.1
+      },
+      "run_id": "0129789739e54c729965c532a7cf06ec",
+      "accuracy": 0.7157,
+      "precision": 0.304,
+      "recall": 0.8071,
+      "f1": 0.4416,
+      "roc_auc": 0.8299,
+      "pr_auc": 0.4383,
+      "threshold": 0.4802,
+      "train_time_s": 1.0456,
+      "latency_p95_ms": 7.8056
+    },
+    {
+      "name": "xgboost_1",
+      "model_type": "xgboost",
+      "params": {
+        "n_estimators": 500,
+        "max_depth": 6,
+        "learning_rate": 0.05
+      },
+      "run_id": "f6d3bee5cd55452d97ec96642a748344",
+      "accuracy": 0.6979,
+      "precision": 0.2924,
+      "recall": 0.8227,
+      "f1": 0.4315,
+      "roc_auc": 0.8271,
+      "pr_auc": 0.4334,
+      "threshold": 0.4465,
+      "train_time_s": 2.2522,
+      "latency_p95_ms": 22.7533
+    }
+  ]
+}

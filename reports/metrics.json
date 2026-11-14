@@ -1,0 +1,21 @@
+{
+  "model": "xgboost_0",
+  "model_version": "xgboost_0@01297897",
+  "accuracy": 0.7101,
+  "precision": 0.3011,
+  "recall": 0.8176,
+  "f1": 0.4401,
+  "roc_auc": 0.8341,
+  "pr_auc": 0.4397,
+  "threshold": 0.4802,
+  "true_negatives": 22687,
+  "false_positives": 10063,
+  "false_negatives": 967,
+  "true_positives": 4335,
+  "n_test": 38052,
+  "registry": {
+    "name": "diabetes-risk-model",
+    "version": "3",
+    "alias": "champion"
+  }
+}

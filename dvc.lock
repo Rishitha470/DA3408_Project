@@ -1,0 +1,203 @@
+schema: '2.0'
+stages:
+  ingest:
+    cmd: python -m src.data.ingest
+    deps:
+    - path: src/data/ingest.py
+      hash: md5
+      md5: 7161b162e9fa7a1d943c113cefa51809
+      size: 2881
+      isexec: true
+    - path: src/data/synthetic.py
+      hash: md5
+      md5: 1aa81b6cb6bda6c409f2a8573cc7954d
+      size: 2389
+      isexec: true
+    params:
+      params.yaml:
+        data:
+          source: uci
+          csv_path: 
+            data/external/diabetes_binary_health_indicators_BRFSS2015.csv
+          synthetic_rows: 20000
+        seed: 42
+    outs:
+    - path: data/raw/diabetes.csv
+      hash: md5
+      md5: 2500563d61be116380f818e68b6a7083
+      size: 11576234
+      isexec: true
+    - path: reports/ingest.json
+      hash: md5
+      md5: 10ea32669ddafcdfd9eb9e47af3a17cc
+      size: 128
+      isexec: true
+  process:
+    cmd: python -m src.data.process
+    deps:
+    - path: data/raw/diabetes.csv
+      hash: md5
+      md5: 2500563d61be116380f818e68b6a7083
+      size: 11576234
+      isexec: true
+    - path: src/common/drift.py
+      hash: md5
+      md5: 198cd37f80134ffe9a1790071ae10b23
+      size: 2917
+      isexec: true
+    - path: src/common/schema.py
+      hash: md5
+      md5: 5cfaffd1ac8e616d0723fa1713a8fe69
+      size: 3238
+      isexec: true
+    - path: src/data/process.py
+      hash: md5
+      md5: 1c34317cfaed43c79f2bce399c2ffc8c
+      size: 8459
+      isexec: true
+    params:
+      params.yaml:
+        process:
+          num_cpus: 4
+          num_blocks: 8
+          drop_duplicates: false
+          val_size: 0.15
+          test_size: 0.15
+          quality:
+            min_rows: 1000
+            max_invalid_fraction: 0.05
+            min_positive_rate: 0.02
+            max_positive_rate: 0.5
+        seed: 42
+    outs:
+    - path: data/processed
+      hash: md5
+      md5: 7eedc8e38ba8cfe75eae3d11e977589d.dir
+      size: 1444193
+      nfiles: 4
+    - path: reports/data_quality.json
+      hash: md5
+      md5: e6e2da216c362dee76f19f3f68cea405
+      size: 634
+      isexec: true
+  train:
+    cmd: python -m src.models.train
+    deps:
+    - path: data/processed
+      hash: md5
+      md5: 7eedc8e38ba8cfe75eae3d11e977589d.dir
+      size: 1444193
+      nfiles: 4
+    - path: docker/requirements-model.txt
+      hash: md5
+      md5: 187a3148ac0736474598ea2baef130a5
+      size: 316
+      isexec: true
+    - path: src/common/features.py
+      hash: md5
+      md5: 63929cc8c8825762e60aec5d27532ff0
+      size: 1282
+      isexec: true
+    - path: src/common/schema.py
+      hash: md5
+      md5: 5cfaffd1ac8e616d0723fa1713a8fe69
+      size: 3238
+      isexec: true
+    - path: src/models/pyfunc.py
+      hash: md5
+      md5: 309a01494b373b5a79a68c9c34458845
+      size: 1094
+      isexec: true
+    - path: src/models/train.py
+      hash: md5
+      md5: c28f4a37d5aaf4a510538fa5e4598493
+      size: 13454
+      isexec: true
+    params:
+      params.yaml:
+        seed: 42
+        train:
+          experiment_name: diabetes-risk
+          selection_metric: roc_auc
+          threshold_beta: 2.0
+          candidates:
+            logistic_regression:
+            - C: 0.1
+            - C: 1.0
+            random_forest:
+            - n_estimators: 100
+              max_depth: 10
+              min_samples_leaf: 50
+            - n_estimators: 150
+              max_depth: 12
+              min_samples_leaf: 100
+            xgboost:
+            - n_estimators: 300
+              max_depth: 4
+              learning_rate: 0.1
+            - n_estimators: 500
+              max_depth: 6
+              learning_rate: 0.05
+    outs:
+    - path: models
+      hash: md5
+      md5: 0a62ff3d68378d265d3d32fe74de686b.dir
+      size: 313481
+      nfiles: 31
+    - path: reports/model_comparison.json
+      hash: md5
+      md5: 552989dee9bf3bfc1e83e6785b26e995
+      size: 2822
+      isexec: true
+  evaluate:
+    cmd: python -m src.models.evaluate
+    deps:
+    - path: data/processed
+      hash: md5
+      md5: 7eedc8e38ba8cfe75eae3d11e977589d.dir
+      size: 1444193
+      nfiles: 4
+    - path: models
+      hash: md5
+      md5: 0a62ff3d68378d265d3d32fe74de686b.dir
+      size: 313481
+      nfiles: 31
+    - path: src/models/evaluate.py
+      hash: md5
+      md5: fad8b6d5f53d9cf136463122762c73c9
+      size: 5646
+      isexec: true
+    params:
+      params.yaml:
+        evaluate:
+          registered_model_name: diabetes-risk-model
+          acceptance:
+            min_roc_auc: 0.78
+            min_recall: 0.7
+            min_precision: 0.25
+    outs:
+    - path: reports/acceptance.json
+      hash: md5
+      md5: 748a2cab53cc72d797fb7bcbe3fe438c
+      size: 329
+      isexec: true
+    - path: reports/metrics.json
+      hash: md5
+      md5: 6bee00cbb274eb6195514d21de5e1843
+      size: 438
+      isexec: true
+    - path: reports/plots/confusion.csv
+      hash: md5
+      md5: 3137658ad94022cd0198b81dcb638c5d
+      size: 152225
+      isexec: true
+    - path: reports/plots/pr.csv
+      hash: md5
+      md5: 752176ace468403d33651652d2483b9f
+      size: 11528
+      isexec: true
+    - path: reports/plots/roc.csv
+      hash: md5
+      md5: 58855ecfac9938930527618aefc0f5a1
+      size: 11793
+      isexec: true

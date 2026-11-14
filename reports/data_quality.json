@@ -1,0 +1,32 @@
+{
+  "rows_in": 253680,
+  "rows_out": 253680,
+  "invalid_rows_dropped": 0,
+  "duplicate_rows": 24206,
+  "duplicates_dropped": false,
+  "positive_rate": 0.1393,
+  "split_rows": {
+    "train": 177576,
+    "val": 38052,
+    "test": 38052
+  },
+  "nulls": {},
+  "out_of_range": {},
+  "quality_checks": {
+    "min_rows": true,
+    "max_invalid_fraction": true,
+    "positive_rate_range": true
+  },
+  "ray": {
+    "num_cpus": 4,
+    "num_blocks": 8
+  },
+  "timings_s": {
+    "read_s": 7.164,
+    "validate_s": 2.663,
+    "clean_s": 1.337,
+    "total_s": 17.872
+  },
+  "throughput_rows_per_s": 14194.4,
+  "ray_processing_rows_per_s": 22723.2
+}
