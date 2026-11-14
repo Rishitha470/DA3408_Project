@@ -14,6 +14,9 @@ and what I did myself, so that the work can be assessed fairly.
 ## What the AI tools produced
 
 * **First version of the code base (Claude):** I used this to build the first version of the project so that I can get an idea of what to do.
+* **Diagrams:** the architecture diagram (`docs/architecture.md`) and the high-level design diagram
+  (`docs/HLD.md`) were generated with Claude as Mermaid code, which GitHub draws as pictures. I reviewed
+  both against the running system to make sure every block and arrow matches how it actually works.
 * **Fixes and changes during my runs:** when my runs showed problems, it diagnosed them and
   changed the code: the non-reproducible data split, the drift window size, robust model registration, the
   Grafana panel colours and the error-rate rule, the registry alias during rollback, the MLflow server workers,
