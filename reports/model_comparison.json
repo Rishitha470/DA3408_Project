@@ -8,7 +8,7 @@
       "params": {
         "C": 0.1
       },
-      "run_id": "e66de3d050174d1d9fe233d94967a567",
+      "run_id": "4c77c4812a6c4f87b9a5ea74d95dbacb",
       "accuracy": 0.6917,
       "precision": 0.2886,
       "recall": 0.828,
@@ -16,8 +16,8 @@
       "roc_auc": 0.8256,
       "pr_auc": 0.425,
       "threshold": 0.4332,
-      "train_time_s": 2.5174,
-      "latency_p95_ms": 7.0126
+      "train_time_s": 3.7946,
+      "latency_p95_ms": 6.5463
     },
     {
       "name": "logistic_regression_1",
@@ -25,7 +25,7 @@
       "params": {
         "C": 1.0
       },
-      "run_id": "62b567d1295c4767814beaad9104d5e1",
+      "run_id": "efd3047d66cc4a8abfd25f743d5e80f9",
       "accuracy": 0.6917,
       "precision": 0.2886,
       "recall": 0.828,
@@ -33,8 +33,8 @@
       "roc_auc": 0.8256,
       "pr_auc": 0.425,
       "threshold": 0.4332,
-      "train_time_s": 3.0114,
-      "latency_p95_ms": 6.8521
+      "train_time_s": 20.2309,
+      "latency_p95_ms": 13.5887
     },
     {
       "name": "random_forest_0",
@@ -44,7 +44,7 @@
         "max_depth": 10,
         "min_samples_leaf": 50
       },
-      "run_id": "b8a3ca361e0b47088a7aa93e527812da",
+      "run_id": "4f370fd9e7ba408580eac4f4f26a1347",
       "accuracy": 0.6795,
       "precision": 0.2827,
       "recall": 0.8455,
@@ -52,8 +52,8 @@
       "roc_auc": 0.8267,
       "pr_auc": 0.4303,
       "threshold": 0.4331,
-      "train_time_s": 4.9893,
-      "latency_p95_ms": 124.8457
+      "train_time_s": 4.7074,
+      "latency_p95_ms": 122.1392
     },
     {
       "name": "random_forest_1",
@@ -63,7 +63,7 @@
         "max_depth": 12,
         "min_samples_leaf": 100
       },
-      "run_id": "e6bcf4a888a140daaba9482f3bce37a0",
+      "run_id": "fbc338ebce5a490484472eb6773eb9bd",
       "accuracy": 0.6883,
       "precision": 0.287,
       "recall": 0.8333,
@@ -71,8 +71,8 @@
       "roc_auc": 0.8268,
       "pr_auc": 0.4308,
       "threshold": 0.448,
-      "train_time_s": 7.7382,
-      "latency_p95_ms": 167.515
+      "train_time_s": 7.6119,
+      "latency_p95_ms": 150.5891
     },
     {
       "name": "xgboost_0",
@@ -82,7 +82,7 @@
         "max_depth": 4,
         "learning_rate": 0.1
       },
-      "run_id": "0129789739e54c729965c532a7cf06ec",
+      "run_id": "ff918e3f03b449f0832e5a920ac64bc4",
       "accuracy": 0.7157,
       "precision": 0.304,
       "recall": 0.8071,
@@ -90,8 +90,8 @@
       "roc_auc": 0.8299,
       "pr_auc": 0.4383,
       "threshold": 0.4802,
-      "train_time_s": 1.0456,
-      "latency_p95_ms": 7.8056
+      "train_time_s": 2.4074,
+      "latency_p95_ms": 5.9329
     },
     {
       "name": "xgboost_1",
@@ -101,7 +101,7 @@
         "max_depth": 6,
         "learning_rate": 0.05
       },
-      "run_id": "f6d3bee5cd55452d97ec96642a748344",
+      "run_id": "1f22db29175e4c059e83ff1991dfd625",
       "accuracy": 0.6979,
       "precision": 0.2924,
       "recall": 0.8227,
@@ -109,8 +109,8 @@
       "roc_auc": 0.8271,
       "pr_auc": 0.4334,
       "threshold": 0.4465,
-      "train_time_s": 2.2522,
-      "latency_p95_ms": 22.7533
+      "train_time_s": 2.2137,
+      "latency_p95_ms": 5.746
     }
   ]
 }

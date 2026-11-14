@@ -1,6 +1,6 @@
 {
   "model": "xgboost_0",
-  "model_version": "xgboost_0@01297897",
+  "model_version": "xgboost_0@ff918e3f",
   "accuracy": 0.7101,
   "precision": 0.3011,
   "recall": 0.8176,
@@ -15,7 +15,7 @@
   "n_test": 38052,
   "registry": {
     "name": "diabetes-risk-model",
-    "version": "3",
+    "version": "4",
     "alias": "champion"
   }
 }
