@@ -27,6 +27,48 @@ Recall is prioritised because a missed at-risk person is worse than an unnecessa
 * **Duplicates:** identical rows are kept (their count is reported in `reports/data_quality.json`), because identical survey answers from different people are genuine
   (configurable: `process.drop_duplicates`).
 
+## 2a. High-level design diagram
+
+The system as a lifecycle loop: how data becomes a served model, and how monitoring feeds back into
+retraining and rollback. (Component-level detail is in [architecture.md](architecture.md).)
+
+```mermaid
+flowchart TB
+  subgraph BUILD["1. Build (offline, DVC pipeline)"]
+    D[(CDC survey data<br/>UCI id 891)] --> P["Data engineering<br/>Ray: validate, quality gate, clean, split"]
+    P --> T["Training<br/>6 candidates, threshold for recall"]
+    T --> G{"Acceptance gate<br/>AUC, recall, precision"}
+  end
+
+  subgraph TRACK["2. Track and version"]
+    GIT["Git + Git LFS<br/>code, configs, docs"]
+    DVC["DVC<br/>data, models, dvc.lock"]
+    MLF["MLflow<br/>runs, metrics, registry @champion"]
+  end
+
+  subgraph SERVE["3. Serve (online, Docker Compose)"]
+    UI["Web UI"] -->|REST| API["FastAPI backend<br/>validation, explanation, metrics"]
+    API -->|REST| MS["MLflow model server"]
+  end
+
+  subgraph OPERATE["4. Monitor and maintain"]
+    MON["Prometheus + Grafana<br/>health, latency, errors, predictions"]
+    DR["Drift check (PSI)<br/>last 500 inputs vs training data"]
+    AL["Alerts<br/>Alertmanager"]
+  end
+
+  G -- pass --> MLF
+  G -- fail --> STOP["model rejected,<br/>current model stays"]
+  T --> DVC
+  MLF --> MS
+  API --> MON --> AL
+  API --> DR --> AL
+  DR -- "drift: retrain" --> P
+  AL -. "bad model: rollback.sh" .-> DVC
+  DVC -. "earlier model" .-> MS
+  USER((User)) --> UI
+```
+
 ## 3. Key design choices and rationale
 
 | Decision | Choice | Why | Alternative considered |
