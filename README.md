@@ -30,7 +30,17 @@ From my run on the CDC Diabetes Health Indicators data (253,680 survey answers);
 | Drift | shifted traffic detected on BMI, PhysActivity, Age (PSI 1.77); alert fires; the model is retrained and can be rolled back |
 | Reproducibility | two full re-runs from the same commit gave identical metrics; every model version is tagged with its Git commit |
 
-Screenshots of the app, pipeline console, Grafana, Prometheus and MLflow are in [docs/screenshots/](docs/screenshots/).
+## Screenshots
+
+| The app: result page | Pipeline console ("How it works" page) |
+|---|---|
+| ![Result page](screenshots/05_app_result.png) | ![Pipeline console](screenshots/07_console_dvc_pipeline.png) |
+| **Grafana: model and drift** | **MLflow: registered model versions** |
+| ![Grafana](screenshots/13_grafana_model_and_drift.png) | ![MLflow registry](screenshots/19_mlflow_model_versions.png) |
+
+All 19 screenshots (app, pipeline console, Grafana, Prometheus, MLflow) are in [screenshots/](screenshots/).
+
+## Documents
 
 | Document | Path |
 |---|---|
@@ -46,22 +56,76 @@ Screenshots of the app, pipeline console, Grafana, Prometheus and MLflow are in 
 ## Repository layout
 
 ```
-src/                  pipeline code (shared by training and serving)
-  common/             schema, feature engineering, drift (PSI), encryption, logging, run tracking
-  data/               ingest.py (stage 1), process.py (stage 2, Ray), synthetic.py (tests only)
-  models/             train.py (stage 3, MLflow), evaluate.py (stage 4, registry), pyfunc.py
-  monitoring/         drift_monitor.py (drift check + retraining trigger)
-backend/              FastAPI REST API (Dockerfile, app/)
-frontend/             web UI: html/ (index, pipeline console, help), nginx, Dockerfile
-docker/               MLflow image (tracking server and model server), model requirements
-monitoring/           Prometheus config + alert rules, Alertmanager, Grafana provisioning + dashboard
-tests/                74 automated tests (pytest)
-scripts/              run_tests, ci, load_test, simulate_traffic, rollback, build_dashboard
-docs/                 the mandatory documents
-dvc.yaml params.yaml  DVC pipeline (DAG) and all parameters
-MLproject python_env.yaml   MLflow Project (identical dev/test environments)
-docker-compose.yml    all runtime services
+.
+├── README.md                     you are here: what it is, how to run it
+├── REPORT.md                     project report: design, results, problems fixed, rubric coverage
+├── AI_DISCLOSURE.md              how I used AI tools
+│
+├── docs/                         the mandatory documents
+│   ├── architecture.md           architecture diagram + what each block does + deployment table
+│   ├── HLD.md                    high-level design: choices and rationale, results (section 8)
+│   ├── LLD.md                    low-level design: every API endpoint with input/output, modules, config
+│   ├── test_plan.md              test plan, 58 test cases, acceptance criteria, execution results
+│   ├── test_report.md            generated test report: 74 tests, passed / failed
+│   └── user_manual.md            user manual for non-technical users (also in the app under Help)
+├── screenshots/                  19 screenshots: app, pipeline console, Grafana, Prometheus, MLflow
+│
+├── dvc.yaml                      DVC pipeline (DAG): ingest -> process -> train -> evaluate
+├── dvc.lock                      exact hashes of the data, models and code of the last run
+├── params.yaml                   every tunable setting (data, Ray, models, threshold, acceptance, drift)
+├── MLproject, python_env.yaml    MLflow Project entry points (identical dev/test environments)
+├── docker-compose.yml            all 8 runtime services
+├── requirements.txt              Python dependencies (pinned)
+│
+├── src/                          pipeline code (shared by training and serving)
+│   ├── data/
+│   │   ├── ingest.py             stage 1: download the CDC data, check the schema
+│   │   ├── process.py            stage 2: Ray validation, quality gate, cleaning, reproducible split
+│   │   └── synthetic.py          small synthetic dataset for the tests
+│   ├── models/
+│   │   ├── train.py              stage 3: 6 candidates, threshold tuning, MLflow tracking
+│   │   ├── evaluate.py           stage 4: test set, acceptance gate, MLflow registry (@champion)
+│   │   └── pyfunc.py             the MLflow model that the model server runs
+│   ├── monitoring/
+│   │   └── drift_monitor.py      batch drift check, triggers retraining
+│   └── common/                   schema, feature engineering, PSI drift, encryption, logging, run log
+│
+├── backend/                      FastAPI REST API (Dockerfile + app/)
+│   └── app/
+│       ├── main.py               endpoints, middleware, error handling
+│       ├── predictor.py          calls the MLflow model server (or loads the model locally)
+│       ├── explain.py            "what would lower your risk most"
+│       ├── prediction_store.py   encrypted input log + live drift window
+│       ├── metrics.py            Prometheus metrics
+│       ├── pipeline_status.py    data for the pipeline console
+│       ├── schemas.py            request/response validation
+│       └── config.py             settings from environment variables
+├── frontend/                     web UI served by nginx (Dockerfile)
+│   └── html/                     index.html (risk check), pipeline.html (console), manual.html (help), css/, js/
+├── docker/                       MLflow image (tracking server + model server), model requirements
+├── monitoring/
+│   ├── prometheus/               scrape config + 7 alert rules
+│   ├── alertmanager/             alert routing
+│   └── grafana/                  provisioned data source + dashboard (20 panels)
+│
+├── reports/                      results of the last run (tracked by DVC as metrics/plots)
+│   ├── ingest.json, data_quality.json       data statistics and Ray throughput
+│   ├── model_comparison.json                all 6 candidates on the validation split
+│   ├── metrics.json, acceptance.json        test-set metrics and the acceptance gate
+│   └── plots/                               ROC, precision-recall and confusion-matrix data
+├── tests/                        74 automated tests (pytest)
+└── scripts/
+    ├── ci.sh                     CI gate: lint -> tests -> dvc repro -> metrics diff
+    ├── install_git_hook.sh       runs ci.sh before every push (and uploads the Git LFS files)
+    ├── run_tests.py              runs the tests and writes docs/test_report.md
+    ├── simulate_traffic.py       normal or drifted traffic for the monitoring demo
+    ├── load_test.py              throughput and latency at different numbers of users
+    ├── rollback.sh               return to the model of an earlier commit
+    └── build_dashboard.py        generates the Grafana dashboard
 ```
+
+Not in the repository (created by running it): `data/` and `models/` (versioned with DVC), `logs/`, and `.env`
+(your secrets, see step 2).
 
 ## Prerequisites
 

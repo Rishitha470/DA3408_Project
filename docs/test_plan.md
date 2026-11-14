@@ -156,12 +156,12 @@ MLflow Project entry point `mlflow run . -e test` and inside `scripts/ci.sh`.
 |---|---|---|
 | S1 | PASS | all 8 services up; mlflow, model-server, backend, frontend `healthy` |
 | S2 | PASS | `/ready` 200; Prometheus targets backend, node-exporter, prometheus all UP; Grafana shows every dependency UP |
-| S3 | PASS | questionnaire completed in the browser: level, score bar, 3 factors, disclaimer (`docs/screenshots/05_app_result.png`) |
+| S3 | PASS | questionnaire completed in the browser: level, score bar, 3 factors, disclaimer (`screenshots/05_app_result.png`) |
 | S4 | PASS | model server stopped: HTTP 503 `model_unavailable`, alert `ModelServerDown` firing; restart recovered |
 | S5 | PASS | 500 normal requests: all 200, drift not detected (max PSI 0.020) |
 | S6 | PASS | 400 shifted requests: drift on BMI, PhysActivity, Age (max PSI 1.77); `DataDriftDetected` firing |
 | S7 | PASS | 1 / 4 / 8 users: p95 43.6 / 231.5 / 516.5 ms, 0 errors (HLD 8.4) |
-| S8 | PASS | pipeline console shows DAG, statuses, run history, metrics, drift (`docs/screenshots/07`-`11`) |
+| S8 | PASS | pipeline console shows DAG, statuses, run history, metrics, drift (`screenshots/07`-`11`) |
 | S9 | PASS | drift-triggered retraining registered version 4; `rollback.sh` restored version 3 and moved `@champion` |
 
 ### 8.4 UI checklist (section 6)

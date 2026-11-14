@@ -89,6 +89,8 @@ The full architecture diagram with an explanation of every block is in
 All candidates are within 0.005 ROC-AUC of each other, which tells me the limit is the information in 21
 self-reported answers rather than the algorithm.
 
+![Model comparison and drift in the pipeline console](screenshots/09_console_models_compared_drift.png)
+
 ### 5.3 Held-out test set (38,052 people)
 
 ROC-AUC **0.834**, recall **0.818**, precision **0.301**, F1 0.440, PR-AUC 0.440, accuracy 0.710, threshold 0.480.
@@ -114,6 +116,8 @@ implausible, and parallel cleaning. Measured throughput on my VM: **22,723 rows/
 14,194 rows/s for the whole stage including Ray start-up (17.9 s for 253,680 rows). Stage durations of the full
 pipeline: ingest 19.1 s (download), process 17.9 s, train 50.6 s, evaluate 2.2 s.
 
+![Ray processing results and test-set metrics in the pipeline console](screenshots/08_console_data_and_model.png)
+
 ### 6.2 Source control and continuous integration
 
 * **Git** for code, configuration, metrics and documents; **Git LFS** for the screenshots; **DVC** for the raw
@@ -130,6 +134,10 @@ pipeline: ingest 19.1 s (download), process 17.9 s, train 50.6 s, evaluate 2.2 s
 * **CI gate** (`scripts/ci.sh`): flake8 -> 74 tests + test report -> `dvc repro` (including the acceptance gate)
   -> `dvc metrics diff` against the last commit. It runs automatically as a Git pre-push hook.
 
+| DVC stages with their last run | Every pipeline run, successful or failed |
+|---|---|
+| ![DVC pipeline in the console](screenshots/07_console_dvc_pipeline.png) | ![Run history](screenshots/10_console_run_history.png) |
+
 ### 6.3 Experiment tracking (MLflow)
 
 Every training run is one parent run with one nested run per candidate. I did not rely on autolog; everything
@@ -144,6 +152,13 @@ is logged explicitly:
 * **Tags for reproducibility:** `git_commit`, `git_dirty`, `train_data_md5`, `model_type`, `best_model`,
   `acceptance`. Every registered model version also carries its `git_commit` and test scores.
 
+| Model registry: `@champion` | Every version with its Git commit and test scores |
+|---|---|
+| ![MLflow registry](screenshots/18_mlflow_registry.png) | ![MLflow model versions](screenshots/19_mlflow_model_versions.png) |
+
+Version 1 was trained before I fixed the row-order problem (section 12) and scored 0.8300; versions 2 and 3,
+trained from the same commit after the fix, are identical (0.8341).
+
 ### 6.4 Exporter instrumentation and visualisation (Prometheus, Grafana)
 
 The backend exposes `/metrics` with request counts and latency per endpoint, in-progress requests, handled
@@ -153,6 +168,16 @@ the health of every other service (`dependency_up`). node-exporter adds CPU and 
 5 s and evaluates **7 alert rules** (backend down, model server down, error rate > 5 %, p95 > 500 ms, data drift,
 pipeline stage failed, high-risk share spike), routed to Alertmanager. Grafana loads a provisioned dashboard
 with **20 panels in 6 rows** that refreshes every 5 s (near real time).
+
+| Service health and API traffic | Model outputs and drift per feature |
+|---|---|
+| ![Grafana service health and API](screenshots/12_grafana_service_health_api.png) | ![Grafana model and drift](screenshots/13_grafana_model_and_drift.png) |
+| **Pipeline stages and infrastructure** | **Prometheus: every scrape target up** |
+| ![Grafana pipeline and infrastructure](screenshots/15_grafana_pipeline_and_infra.png) | ![Prometheus targets](screenshots/16_prometheus_targets.png) |
+
+In the first Grafana screenshot, the 503 responses and `model_unavailable` exceptions around 19:37 are real:
+my VM was overloaded at that moment, the model server stopped answering, and the backend returned the friendly
+503 instead of crashing.
 
 ### 6.5 Software packaging
 
@@ -193,7 +218,17 @@ with **20 panels in 6 rows** that refreshes every 5 s (near real time).
 * **ML pipeline visualisation and management console:** the app's *How it works* page shows the DVC DAG with the
   status of each stage, run history with successes and failures and their errors, data-quality checks, Ray
   throughput, the model comparison, test metrics with the acceptance gate, live drift per feature, and links to
-  MLflow, Grafana, Prometheus and Alertmanager. Screenshots: [docs/screenshots/](docs/screenshots/).
+  MLflow, Grafana, Prometheus and Alertmanager.
+
+| Step 1 of the questionnaire | Yes / No questions |
+|---|---|
+| ![App home](screenshots/01_app_home.png) | ![Health conditions](screenshots/02_app_form_health_conditions.png) |
+| **Result: level, score and what to change** | **Advice and disclaimer** |
+| ![Result](screenshots/05_app_result.png) | ![Advice](screenshots/06_app_result_advice.png) |
+| **Number answers with their allowed range** | **Pipeline console: run history and tool links** |
+| ![Questions with numbers](screenshots/03_app_form_feeling.png) | ![Console tools](screenshots/11_console_tools.png) |
+
+All screenshots: [screenshots/](screenshots/).
 
 ## 9. Testing
 

@@ -27,9 +27,9 @@ It asks 21 short questions about your health and habits and compares your answer
 
 6. On the last screen, press **See my result**.
 
-![The first screen: about you](screenshots/01_app_home.png)
+![The first screen: about you](../screenshots/01_app_home.png)
 
-![Answering questions with Yes / No buttons](screenshots/02_app_form_health_conditions.png)
+![Answering questions with Yes / No buttons](../screenshots/02_app_form_health_conditions.png)
 
 ## Reading your result
 
@@ -40,7 +40,7 @@ It asks 21 short questions about your health and habits and compares your answer
 
 To try different answers, press **Change my answers**. To clear everything, press **Start again**.
 
-![An example result: low risk, with the changes that would lower the score most](screenshots/05_app_result.png)
+![An example result: low risk, with the changes that would lower the score most](../screenshots/05_app_result.png)
 
 ## What to do next
 
