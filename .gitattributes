@@ -1,3 +1,8 @@
+# Always store and check out text files with LF line endings (shell scripts and YAML must not get
+# Windows CRLF endings, e.g. when the repository is used from Windows Git on the shared folder).
+* text=auto eol=lf
+*.sh text eol=lf
+
 # Large binary files that belong in Git (diagrams, screenshots) are stored with Git LFS.
 # Data and models are versioned with DVC instead (see dvc.yaml / .dvc/).
 *.png filter=lfs diff=lfs merge=lfs -text

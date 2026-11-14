@@ -286,7 +286,7 @@
     {
       "type": "timeseries",
       "title": "Errors (5xx share) and handled exceptions",
-      "description": "",
+      "description": "Share of prediction requests answered with a server error (5xx), and handled exceptions per second",
       "id": 8,
       "datasource": {
         "type": "prometheus",
@@ -304,7 +304,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "job:http_error_ratio:rate5m",
+          "expr": "job:http_error_ratio:rate5m or on() vector(0)",
           "legendFormat": "5xx share of predictions",
           "refId": "A"
         },
@@ -313,15 +313,13 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum by (type) (rate(app_exceptions_total[1m]))",
-          "legendFormat": "exceptions/s {{type}}",
+          "expr": "sum by (type) (rate(app_exceptions_total[1m])) or on() vector(0)",
+          "legendFormat": "handled exceptions/s {{type}}",
           "refId": "B"
         }
       ],
       "fieldConfig": {
-        "defaults": {
-          "unit": "percentunit"
-        },
+        "defaults": {},
         "overrides": []
       },
       "options": {}
@@ -376,7 +374,7 @@
     {
       "type": "bargauge",
       "title": "Risk score distribution (last 1h)",
-      "description": "Cumulative histogram buckets of the model's risk score",
+      "description": "Number of predictions in each risk-score band (0.1 = 10 points on the app's 0-100 scale)",
       "id": 11,
       "datasource": {
         "type": "prometheus",
@@ -395,17 +393,26 @@
             "uid": "prometheus"
           },
           "expr": "sum by (le) (increase(model_prediction_probability_bucket[1h]))",
-          "legendFormat": "<= {{le}}",
-          "refId": "A"
+          "legendFormat": "score up to {{le}}",
+          "refId": "A",
+          "format": "heatmap",
+          "instant": true
         }
       ],
       "fieldConfig": {
-        "defaults": {},
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "blue"
+          },
+          "decimals": 0
+        },
         "overrides": []
       },
       "options": {
-        "orientation": "vertical",
-        "displayMode": "gradient"
+        "orientation": "horizontal",
+        "displayMode": "gradient",
+        "showUnfilled": true
       }
     },
     {
@@ -436,6 +443,10 @@
       ],
       "fieldConfig": {
         "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "blue"
+          },
           "decimals": 3
         },
         "overrides": []
@@ -577,7 +588,12 @@
         }
       ],
       "fieldConfig": {
-        "defaults": {},
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "blue"
+          }
+        },
         "overrides": []
       },
       "options": {}
@@ -725,7 +741,11 @@
       ],
       "fieldConfig": {
         "defaults": {
-          "unit": "s"
+          "unit": "s",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "blue"
+          }
         },
         "overrides": []
       },
@@ -760,7 +780,12 @@
         }
       ],
       "fieldConfig": {
-        "defaults": {},
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "blue"
+          }
+        },
         "overrides": []
       },
       "options": {
@@ -794,7 +819,12 @@
         }
       ],
       "fieldConfig": {
-        "defaults": {},
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "blue"
+          }
+        },
         "overrides": []
       },
       "options": {}
@@ -826,7 +856,12 @@
         }
       ],
       "fieldConfig": {
-        "defaults": {},
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "blue"
+          }
+        },
         "overrides": []
       },
       "options": {}

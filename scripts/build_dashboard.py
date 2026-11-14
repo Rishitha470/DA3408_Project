@@ -35,6 +35,9 @@ UPDOWN = {"mappings": [{"type": "value", "options": {"0": {"text": "DOWN", "colo
                                                      "1": {"text": "UP", "color": "green"}}}],
           "thresholds": {"mode": "absolute",
                          "steps": [{"color": "red", "value": None}, {"color": "green", "value": 1}]}}
+# Informational numbers (row counts, throughput, durations) are neither good nor bad: show them in a
+# neutral colour instead of Grafana's default "red above 80" threshold, which made healthy values look like errors.
+INFO = {"color": {"mode": "fixed", "fixedColor": "blue"}}
 PSI = {"min": 0, "thresholds": {"mode": "absolute", "steps": [
     {"color": "green", "value": None}, {"color": "orange", "value": 0.1}, {"color": "red", "value": 0.2}]}}
 
@@ -54,20 +57,25 @@ panel("timeseries", "Prediction latency (p50 / p95 / p99)", 8, 6, 8, 8, [
     target(f"histogram_quantile(0.50, {LAT})", "p50"),
     target(f"histogram_quantile(0.95, {LAT})", "p95"),
     target(f"histogram_quantile(0.99, {LAT})", "p99")], "s")
+# "or vector(0)": show a flat 0 line when nothing has failed, instead of "No data"
 panel("timeseries", "Errors (5xx share) and handled exceptions", 16, 6, 8, 8, [
-    target("job:http_error_ratio:rate5m", "5xx share of predictions"),
-    target("sum by (type) (rate(app_exceptions_total[1m]))", "exceptions/s {{type}}")], "percentunit")
+    target("job:http_error_ratio:rate5m or on() vector(0)", "5xx share of predictions"),
+    target("sum by (type) (rate(app_exceptions_total[1m])) or on() vector(0)", "handled exceptions/s {{type}}")],
+    desc="Share of prediction requests answered with a server error (5xx), and handled exceptions per second")
 
 row("Model", 14)
 panel("timeseries", "Predictions by risk level", 0, 15, 8, 8,
       [target("sum by (risk_level) (rate(model_predictions_total[1m]))", "{{risk_level}}")], "reqps",
       fieldConfig_custom=None)
+# format=heatmap makes Grafana turn the cumulative Prometheus buckets into a count per score band
 panel("bargauge", "Risk score distribution (last 1h)", 8, 15, 8, 8,
-      [target("sum by (le) (increase(model_prediction_probability_bucket[1h]))", "<= {{le}}")],
-      options={"orientation": "vertical", "displayMode": "gradient"},
-      desc="Cumulative histogram buckets of the model's risk score")
+      [dict(target("sum by (le) (increase(model_prediction_probability_bucket[1h]))", "score up to {{le}}"),
+            format="heatmap", instant=True)],
+      defaults=dict(INFO, decimals=0),
+      options={"orientation": "horizontal", "displayMode": "gradient", "showUnfilled": True},
+      desc="Number of predictions in each risk-score band (0.1 = 10 points on the app's 0-100 scale)")
 panel("stat", "Test-set metrics of served model", 16, 15, 8, 4, [target("model_test_metric", "{{metric}}")],
-      defaults={"decimals": 3})
+      defaults=dict(INFO, decimals=3))
 panel("timeseries", "Inference latency p95", 16, 19, 8, 4,
       [target("histogram_quantile(0.95, sum by (le) (rate(model_inference_duration_seconds_bucket[1m])))", "p95")], "s")
 
@@ -76,7 +84,7 @@ panel("stat", "Drift detected", 0, 24, 4, 4, [target("data_drift_detected")], de
     "mappings": [{"type": "value", "options": {"0": {"text": "No", "color": "green"},
                                                "1": {"text": "YES", "color": "red"}}}],
     "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": None}, {"color": "red", "value": 1}]}})
-panel("stat", "Inputs in drift window", 0, 28, 4, 4, [target("data_drift_window_samples")])
+panel("stat", "Inputs in drift window", 0, 28, 4, 4, [target("data_drift_window_samples")], defaults=INFO)
 panel("bargauge", "PSI per feature (0.1 moderate, 0.2 significant)", 4, 24, 20, 8,
       [target("sort_desc(data_drift_psi)", "{{feature}}")], defaults=PSI,
       options={"orientation": "horizontal", "displayMode": "gradient"})
@@ -86,11 +94,12 @@ panel("stat", "Last run status per stage", 0, 33, 8, 4, [target("pipeline_stage_
       defaults={"mappings": [{"type": "value", "options": {"0": {"text": "FAILED", "color": "red"},
                                                            "1": {"text": "OK", "color": "green"}}}]})
 panel("bargauge", "Stage duration (s)", 8, 33, 8, 8, [target("pipeline_stage_last_duration_seconds", "{{stage}}")], "s",
-      options={"orientation": "horizontal"})
+      defaults=INFO, options={"orientation": "horizontal"})
 panel("bargauge", "Stage throughput (rows/s)", 16, 33, 8, 8, [target("pipeline_stage_rows_per_second", "{{stage}}")],
-      options={"orientation": "horizontal"})
-panel("stat", "Ray processing throughput (rows/s)", 0, 37, 4, 4, [target("data_pipeline_ray_rows_per_second")])
-panel("stat", "Rows in / kept", 4, 37, 4, 4, [target("data_pipeline_rows", "{{kind}}")])
+      defaults=INFO, options={"orientation": "horizontal"})
+panel("stat", "Ray processing throughput (rows/s)", 0, 37, 4, 4, [target("data_pipeline_ray_rows_per_second")],
+      defaults=INFO)
+panel("stat", "Rows in / kept", 4, 37, 4, 4, [target("data_pipeline_rows", "{{kind}}")], defaults=INFO)
 
 row("Infrastructure (node-exporter)", 41)
 panel("timeseries", "CPU usage", 0, 42, 12, 7,

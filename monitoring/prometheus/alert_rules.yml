@@ -1,9 +1,10 @@
 groups:
   - name: diabetes-risk-api
     rules:
+      # "or vector(0)": with no 5xx responses yet the numerator has no series; count that as 0 % errors
       - record: job:http_error_ratio:rate5m
         expr: |
-          sum(rate(http_requests_total{endpoint="/api/v1/predict",status=~"5.."}[5m]))
+          (sum(rate(http_requests_total{endpoint="/api/v1/predict",status=~"5.."}[5m])) or vector(0))
           / clamp_min(sum(rate(http_requests_total{endpoint="/api/v1/predict"}[5m])), 1e-9)
       - alert: BackendDown
         expr: up{job="backend"} == 0
