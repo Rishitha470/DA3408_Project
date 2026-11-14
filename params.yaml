@@ -42,5 +42,6 @@ evaluate:
     min_precision: 0.25
 
 monitoring:
+  drift_window: 500        # most recent predictions compared with the training data (backend: DRIFT_WINDOW)
   drift_min_samples: 100
   retrain_on_drift: true

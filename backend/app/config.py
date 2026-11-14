@@ -32,7 +32,9 @@ class Settings:
     cors_origins: List[str] = field(default_factory=lambda: [
         o.strip() for o in os.getenv("CORS_ORIGINS", "*").split(",") if o.strip()])
     refresh_interval_s: float = field(default_factory=lambda: float(os.getenv("REFRESH_INTERVAL_S", "15")))
-    drift_window: int = field(default_factory=lambda: int(os.getenv("DRIFT_WINDOW", "5000")))
+    # drift is computed on the most recent N inputs; a small window reacts to a shift quickly instead of
+    # diluting it with older traffic (keep equal to monitoring.drift_window in params.yaml)
+    drift_window: int = field(default_factory=lambda: int(os.getenv("DRIFT_WINDOW", "500")))
     drift_min_samples: int = field(default_factory=lambda: int(os.getenv("DRIFT_MIN_SAMPLES", "100")))
     admin_token: str = field(default_factory=lambda: os.getenv("ADMIN_TOKEN", ""))
     # internal health checks of other services, e.g. "model-server=http://model-server:5001/ping"

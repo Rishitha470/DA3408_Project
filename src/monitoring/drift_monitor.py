@@ -23,7 +23,7 @@ log = get_logger("drift_monitor")
 PREDICTION_LOG = LOGS_DIR / "predictions.enc"
 
 
-def load_recent_inputs(last_n: int = 5000) -> pd.DataFrame:
+def load_recent_inputs(last_n: int = 500) -> pd.DataFrame:
     cipher = get_cipher()
     if cipher is None:
         raise RuntimeError("PREDICTION_LOG_KEY is not set; cannot decrypt the prediction log")
@@ -34,9 +34,12 @@ def load_recent_inputs(last_n: int = 5000) -> pd.DataFrame:
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--retrain", action="store_true", help="run `dvc repro` if drift is detected")
-    ap.add_argument("--last-n", type=int, default=5000, help="number of recent predictions to use")
+    ap.add_argument("--last-n", type=int, default=None,
+                    help="number of recent predictions to use (default: monitoring.drift_window in params.yaml)")
     args = ap.parse_args()
     params = load_params()["monitoring"]
+    if args.last_n is None:
+        args.last_n = int(params.get("drift_window", 500))
 
     with track_stage("drift_check") as rec:
         reference = json.loads((MODELS_DIR / "drift_reference.json").read_text())

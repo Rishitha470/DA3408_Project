@@ -135,7 +135,7 @@ Response `{"predictions": [{"probability", "prediction", "risk_level", "model_ve
 | `CORS_ORIGINS` | `*` (Compose: UI origins) | Allowed browser origins |
 | `REQUEST_TIMEOUT_S` | 5 | Timeout for model server calls |
 | `REFRESH_INTERVAL_S` | 15 | Monitoring refresh period |
-| `DRIFT_WINDOW`, `DRIFT_MIN_SAMPLES` | 5000, 100 | Drift window and minimum sample size |
+| `DRIFT_WINDOW`, `DRIFT_MIN_SAMPLES` | 500, 100 | Drift window (most recent predictions) and minimum sample size |
 | `ADMIN_TOKEN` | empty | Protects model reload |
 | `DEPENDENCY_URLS` | empty | `name=url` health checks for `dependency_up` |
 | `TOOL_LINKS` | localhost URLs | Links shown in the pipeline console |
