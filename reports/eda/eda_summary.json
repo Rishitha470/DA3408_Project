@@ -1,0 +1,69 @@
+{
+  "rows": 253680,
+  "missing_values": 0,
+  "duplicate_rows": 24206,
+  "class_balance": {
+    "negative": 218334,
+    "positive": 35346,
+    "positive_rate": 0.1393
+  },
+  "bmi_by_target": {
+    "no_diabetes": {
+      "mean": 27.81,
+      "median": 27.0,
+      "std": 6.29
+    },
+    "diabetes": {
+      "mean": 31.94,
+      "median": 31.0,
+      "std": 7.36
+    }
+  },
+  "rate_by_age": {
+    "18-24": 0.0137,
+    "25-29": 0.0184,
+    "30-34": 0.0282,
+    "35-39": 0.0453,
+    "40-44": 0.065,
+    "45-49": 0.0879,
+    "50-54": 0.1174,
+    "55-59": 0.1383,
+    "60-64": 0.1725,
+    "65-69": 0.2037,
+    "70-74": 0.2185,
+    "75-79": 0.213,
+    "80+": 0.1848
+  },
+  "rate_by_general_health": {
+    "Excellent": 0.0252,
+    "Very good": 0.0716,
+    "Good": 0.1779,
+    "Fair": 0.3101,
+    "Poor": 0.3789
+  },
+  "rate_with_high_bp": 0.2445,
+  "rate_without_high_bp": 0.0604,
+  "correlation_with_target": {
+    "GenHlth": 0.2936,
+    "HighBP": 0.2631,
+    "DiffWalk": 0.2183,
+    "BMI": 0.2168,
+    "HighChol": 0.2003,
+    "Age": 0.1774,
+    "HeartDiseaseorAttack": 0.1773,
+    "PhysHlth": 0.1713,
+    "Income": -0.1639,
+    "Education": -0.1245,
+    "PhysActivity": -0.1181,
+    "Stroke": 0.1058,
+    "MentHlth": 0.0693,
+    "CholCheck": 0.0648,
+    "Smoker": 0.0608,
+    "HvyAlcoholConsump": -0.0571,
+    "Veggies": -0.0566,
+    "Fruits": -0.0408,
+    "NoDocbcCost": 0.0314,
+    "Sex": 0.0314,
+    "AnyHealthcare": 0.0163
+  }
+}

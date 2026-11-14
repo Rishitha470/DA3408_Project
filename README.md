@@ -112,7 +112,8 @@ All 19 screenshots (app, pipeline console, Grafana, Prometheus, MLflow) are in [
 │   ├── ingest.json, data_quality.json       data statistics and Ray throughput
 │   ├── model_comparison.json                all 6 candidates on the validation split
 │   ├── metrics.json, acceptance.json        test-set metrics and the acceptance gate
-│   └── plots/                               ROC, precision-recall and confusion-matrix data
+│   ├── plots/                               ROC, precision-recall and confusion-matrix data
+│   └── eda/                                 exploratory data analysis charts and summary
 ├── tests/                        74 automated tests (pytest)
 └── scripts/
     ├── ci.sh                     CI gate: lint -> tests -> dvc repro -> metrics diff
@@ -121,7 +122,8 @@ All 19 screenshots (app, pipeline console, Grafana, Prometheus, MLflow) are in [
     ├── simulate_traffic.py       normal or drifted traffic for the monitoring demo
     ├── load_test.py              throughput and latency at different numbers of users
     ├── rollback.sh               return to the model of an earlier commit
-    └── build_dashboard.py        generates the Grafana dashboard
+    ├── build_dashboard.py        generates the Grafana dashboard
+    └── eda.py                    exploratory data analysis: charts + summary in reports/eda/
 ```
 
 Not in the repository (created by running it): `data/` and `models/` (versioned with DVC), `logs/`, and `.env`
@@ -260,8 +262,8 @@ change didn't affect the model.
 ## MLflow Project
 
 `MLproject` (with `python_env.yaml`) gives every step of the project a fixed entry point, so development and
-testing run the same way: `main` (whole DVC pipeline), `ingest`, `process`, `train`, `evaluate`, `drift`,
-`drift_retrain` and `test`. For example, the test suite as a tracked MLflow run:
+testing run the same way: `main` (whole DVC pipeline), `ingest`, `eda`, `process`, `train`, `evaluate`,
+`drift`, `drift_retrain` and `test`. For example, the test suite as a tracked MLflow run:
 
 ```bash
 mlflow run . -e test --env-manager local --experiment-name diabetes-risk

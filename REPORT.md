@@ -41,6 +41,39 @@ Recall is the main metric because a missed at-risk person costs far more than an
   diabetes. These are stated in the HLD and the user manual.
 * **Split:** stratified 70 / 15 / 15 (177,576 / 38,052 / 38,052 rows).
 
+### 2.1 What the data shows (exploratory analysis)
+
+I ran `scripts/eda.py` on the raw data (also available as the MLflow Project entry point `eda`). The charts and
+the numbers behind them are in [reports/eda/](reports/eda/).
+
+| Class balance | BMI by diabetes status |
+|---|---|
+| ![Class balance](reports/eda/01_class_balance.png) | ![BMI by diabetes status](reports/eda/02_bmi_by_diabetes.png) |
+| **Diabetes by age group** | **Diabetes by self-rated general health** |
+| ![Rate by age](reports/eda/03_rate_by_age.png) | ![Rate by general health](reports/eda/04_rate_by_general_health.png) |
+
+![Correlation of every answer with diabetes](reports/eda/05_correlation_with_target.png)
+
+What I took from it, and how it shaped the design:
+
+* **Strong imbalance:** 35,346 of 253,680 people (13.9 %) have diabetes or prediabetes. A model that always says
+  "no" would be 86 % accurate, so I judge models on recall and ROC-AUC, use class weights and tune the threshold.
+* **General health, blood pressure, walking difficulty, BMI and cholesterol** are the answers most linked to
+  diabetes (correlations 0.20 to 0.29). 24.5 % of people with high blood pressure have diabetes, against 6.0 %
+  without; people who rate their health "poor" have a 37.9 % rate, against 2.5 % for "excellent".
+* **BMI is clearly higher with diabetes:** median 31 against 27, and the whole distribution is shifted right.
+  This is why a shift in BMI is one of the first things the drift monitor would catch.
+* **Risk rises steadily with age** from 1.4 % (18-24) to about 22 % (70-74) and dips slightly after 75.
+  Age cannot be changed, so it is never suggested as advice.
+* **Income, education and physical activity go with lower risk.** Heavy drinking shows a small negative
+  correlation, which is counter-intuitive and probably reflects who answered "yes" rather than a protective
+  effect, so I don't read single correlations as causes; the app only suggests changes that actually lower the
+  model's score for that person.
+* **No single answer is strongly predictive** (all correlations are below 0.3), so the model needs to combine
+  many weak signals; tree models and logistic regression end up close (section 5.2).
+* **Clean data:** no missing values and no invalid codes, so cleaning only enforces the schema. The 24,206
+  duplicate rows are genuine repeated answer patterns and are kept.
+
 ## 3. System overview
 
 The full architecture diagram with an explanation of every block is in
@@ -58,7 +91,7 @@ The full architecture diagram with an explanation of every block is in
 
 | Lifecycle stage (development guideline) | Implementation |
 |---|---|
-| A. Problem definition and data collection | success metrics above; automated download (`src/data/ingest.py`) with schema check and MD5 of the raw file |
+| A. Problem definition and data collection | success metrics above; automated download (`src/data/ingest.py`) with schema check and MD5 of the raw file; exploratory analysis (`scripts/eda.py`, section 2.1) |
 | B. Preprocessing and feature engineering | Ray Data validation, quality gate and cleaning (`src/data/process.py`); feature engineering inside the sklearn Pipeline (`src/common/features.py`) so training and serving use the same code |
 | C. Model development and training | 6 candidates (LR, RF, XGBoost x 2 settings each), class weights, threshold tuned for F2, all tracked in MLflow (`src/models/train.py`) |
 | D. Deployment | acceptance gate + MLflow Model Registry `@champion`; MLflow model server behind a FastAPI backend; Docker Compose; rollback (`scripts/rollback.sh`) |
@@ -183,7 +216,7 @@ my VM was overloaded at that moment, the model server stopped answering, and the
 
 * **MLflow for APIfication:** the model is saved as an MLflow pyfunc model (with the feature-engineering code
   bundled) and served by `mlflow models serve` as the inference engine.
-* **MLflow Project:** `MLproject` with `python_env.yaml` defines the entry points `main`, `ingest`, `process`,
+* **MLflow Project:** `MLproject` with `python_env.yaml` defines the entry points `main`, `ingest`, `eda`, `process`,
   `train`, `evaluate`, `drift`, `drift_retrain` and `test`; I ran `mlflow run . -e test` successfully (74 passed).
 * **FastAPI** exposes the REST API the UI needs (predict, model card, pipeline console, drift, health, metrics);
   its OpenAPI page is at `/docs`.

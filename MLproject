@@ -10,6 +10,8 @@ entry_points:
     command: "dvc repro"                       # the whole DVC pipeline
   ingest:
     command: "python -m src.data.ingest"
+  eda:
+    command: "python scripts/eda.py"
   process:
     command: "python -m src.data.process"
   train:
