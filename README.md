@@ -28,7 +28,7 @@ backend/              FastAPI REST API (Dockerfile, app/)
 frontend/             web UI: html/ (index, pipeline console, help), nginx, Dockerfile
 docker/               MLflow image, pipeline image, model requirements
 monitoring/           Prometheus config + alert rules, Alertmanager, Grafana provisioning + dashboard
-tests/                73 automated tests (pytest)
+tests/                74 automated tests (pytest)
 scripts/              run_tests, ci, load_test, simulate_traffic, rollback, build_dashboard
 docs/                 the mandatory documents
 dvc.yaml params.yaml  DVC pipeline (DAG) and all parameters
@@ -96,7 +96,7 @@ Indicators Dataset") into `data/external/` and set `data.source: csv` in `params
 ### 5. Run the tests and generate the test report
 
 ```bash
-python scripts/run_tests.py        # 73 tests -> docs/test_report.md (includes acceptance results)
+python scripts/run_tests.py        # 74 tests -> docs/test_report.md (includes acceptance results)
 ```
 
 ### 6. Commit the versioned results
@@ -143,11 +143,14 @@ docker compose start model-server
 set -a; source .env; set +a                         # the drift monitor needs PREDICTION_LOG_KEY to decrypt
 python -m src.monitoring.drift_monitor              # writes reports/drift.json
 python -m src.monitoring.drift_monitor --retrain    # runs `dvc repro --force` if drift is detected
-docker compose restart model-server                 # serve the new model
-curl -X POST localhost:8000/api/v1/model/reload -H "X-Admin-Token: <ADMIN_TOKEN from .env>"
+docker compose restart model-server backend         # serve the new model (see note below)
 
 ./scripts/rollback.sh HEAD~1                        # restore the previous model from DVC and restart
 ```
+
+Note: `dvc repro` deletes and recreates `models/`. A Docker bind mount keeps pointing at the deleted folder,
+so containers must be **restarted** (not just asked to reload) after retraining; `rollback.sh` does this too.
+`POST /api/v1/model/reload` (with header `X-Admin-Token`) is for the backend run without Docker (`uvicorn`).
 
 ## Continuous integration
 

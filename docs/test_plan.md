@@ -80,6 +80,7 @@ The model is registered as `@champion` only when AC2-AC4 hold (automatic gate).
 | TC-MOD-11 | test_modeling | what-if only on changeable, unhealthy factors | Age/Sex/Veggies excluded |
 | TC-MOD-12 | test_modeling | low BMI never pushed up | BMI excluded |
 | TC-MOD-13 | test_modeling | top factors sorted, filtered, limited to 3 | as specified |
+| TC-MOD-14 | test_modeling | model registration retried after a tracking-server disconnect | succeeds on 2nd attempt |
 | TC-API-01 | test_api | `/health` | 200, model loaded |
 | TC-API-02 | test_api | `/ready` | 200 |
 | TC-API-03 | test_api | valid prediction | 200, consistent prediction/threshold, disclaimer |
@@ -101,7 +102,7 @@ The model is registered as `@champion` only when AC2-AC4 hold (automatic gate).
 | TC-API-19 | test_api | MLflow client connection error | PredictorError |
 | TC-API-20 | test_api | invalid INFERENCE_MODE | ValueError |
 
-Parametrised cases expand this list to 73 executed tests (see `docs/test_report.md`).
+Parametrised cases expand this list to 74 executed tests (see `docs/test_report.md`).
 
 ## 5. System test checklist (Docker)
 

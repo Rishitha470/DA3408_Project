@@ -6,6 +6,7 @@ Run:  python -m src.models.evaluate
 """
 import json
 import sys
+import time
 
 import joblib
 import mlflow
@@ -49,16 +50,37 @@ def write_plot_data(y, proba, threshold) -> None:
         plots / "confusion.csv", index=False)
 
 
-def register(meta: dict, metrics: dict, model_name: str) -> str:
-    """Register the run's model and point alias 'champion' to it. Returns the version."""
-    client = MlflowClient()
-    mv = mlflow.register_model(f"runs:/{meta['run_id']}/model", model_name)
-    client.set_registered_model_alias(model_name, "champion", mv.version)
+def _register_once(client: MlflowClient, meta: dict, metrics: dict, model_name: str) -> str:
+    """One registration attempt. Idempotent: if a previous attempt already created a version for this
+    run (and only the response was lost), that version is reused instead of creating a duplicate."""
+    existing = client.search_model_versions(f"name='{model_name}' and run_id='{meta['run_id']}'")
+    if existing:
+        version = str(max(int(v.version) for v in existing))
+    else:
+        version = mlflow.register_model(f"runs:/{meta['run_id']}/model", model_name).version
+    client.set_registered_model_alias(model_name, "champion", version)
     for k, v in {"git_commit": git_commit(), "model": meta["model_name"],
                  "test_roc_auc": f"{metrics['roc_auc']:.4f}",
                  "test_recall": f"{metrics['recall']:.4f}"}.items():
-        client.set_model_version_tag(model_name, mv.version, k, v)
-    return mv.version
+        client.set_model_version_tag(model_name, version, k, v)
+    return version
+
+
+def register(meta: dict, metrics: dict, model_name: str, attempts: int = 4, wait_s: float = 5.0) -> str:
+    """Register the run's model and point alias 'champion' to it. Returns the version.
+    Retries on connection problems (e.g. the tracking server restarting a worker under heavy load)
+    instead of failing the whole pipeline run."""
+    client = MlflowClient()
+    for attempt in range(1, attempts + 1):
+        try:
+            return _register_once(client, meta, metrics, model_name)
+        except Exception as exc:                               # MlflowException / ConnectionError
+            if attempt == attempts:
+                raise
+            log.warning("registry call failed (attempt %d/%d): %s; retrying in %.0fs",
+                        attempt, attempts, exc, wait_s * attempt)
+            time.sleep(wait_s * attempt)
+    raise RuntimeError("unreachable")
 
 
 def main() -> int:

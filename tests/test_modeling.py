@@ -62,6 +62,23 @@ def test_acceptance_passes_and_fails():
     assert not res["passed"] and not res["checks"]["min_recall"]["passed"]
 
 
+def test_registration_retries_after_connection_error(monkeypatch):
+    """A momentary tracking-server disconnect must not fail the pipeline: registration is retried."""
+    import src.models.evaluate as ev
+    calls = []
+
+    def flaky(client, meta, metrics, name):
+        calls.append(1)
+        if len(calls) == 1:
+            raise ConnectionError("Remote end closed connection without response")
+        return "7"
+
+    monkeypatch.setattr(ev, "MlflowClient", lambda: None)
+    monkeypatch.setattr(ev, "_register_once", flaky)
+    assert ev.register({"run_id": "r"}, {}, "m", attempts=3, wait_s=0) == "7"
+    assert len(calls) == 2
+
+
 # ---------------------------------------------------------------- drift
 def test_psi_is_zero_for_identical_distributions():
     assert psi([0.2, 0.3, 0.5], [0.2, 0.3, 0.5]) == pytest.approx(0.0, abs=1e-9)
