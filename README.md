@@ -28,7 +28,7 @@ backend/              FastAPI REST API (Dockerfile, app/)
 frontend/             web UI: html/ (index, pipeline console, help), nginx, Dockerfile
 docker/               MLflow image, pipeline image, model requirements
 monitoring/           Prometheus config + alert rules, Alertmanager, Grafana provisioning + dashboard
-tests/                72 automated tests (pytest)
+tests/                73 automated tests (pytest)
 scripts/              run_tests, ci, load_test, simulate_traffic, rollback, build_dashboard
 docs/                 the mandatory documents
 dvc.yaml params.yaml  DVC pipeline (DAG) and all parameters
@@ -96,7 +96,7 @@ Indicators Dataset") into `data/external/` and set `data.source: csv` in `params
 ### 5. Run the tests and generate the test report
 
 ```bash
-python scripts/run_tests.py        # 72 tests -> docs/test_report.md (includes acceptance results)
+python scripts/run_tests.py        # 73 tests -> docs/test_report.md (includes acceptance results)
 ```
 
 ### 6. Commit the versioned results

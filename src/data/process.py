@@ -83,6 +83,9 @@ def run_ray_pipeline(raw_path, num_cpus: int, num_blocks: int):
     timings = {}
     ray.init(num_cpus=num_cpus, include_dashboard=False, ignore_reinit_error=True,
              log_to_driver=False, configure_logging=False)
+    # Ray Data runs blocks in parallel and by default may return them in any order; keep the order
+    # stable (split_data() additionally sorts, so the split never depends on block order).
+    ray.data.DataContext.get_current().execution_options.preserve_order = True
     try:
         t0 = time.perf_counter()
         ds = ray.data.read_csv(str(raw_path)).repartition(num_blocks).materialize()
@@ -98,6 +101,21 @@ def run_ray_pipeline(raw_path, num_cpus: int, num_blocks: int):
     finally:
         ray.shutdown()
     return cleaned, {k: int(v) for k, v in quality.items()}, timings
+
+
+def split_data(cleaned: pd.DataFrame, val_size: float, test_size: float, seed: int):
+    """Stratified train / validation / test split that is reproducible for a given seed.
+
+    The rows are first put into a canonical order (sorted by every column), because Ray may
+    deliver the cleaned rows in a different order on each run; a seeded split of differently
+    ordered rows would select different people. Rows that tie in the sort are identical, so the
+    order is fully determined by the data itself."""
+    canonical = cleaned.sort_values(ALL_COLUMNS, kind="mergesort").reset_index(drop=True)
+    train, rest = train_test_split(canonical, test_size=val_size + test_size,
+                                   stratify=canonical[TARGET], random_state=seed)
+    rel_test = test_size / (val_size + test_size)
+    val, test = train_test_split(rest, test_size=rel_test, stratify=rest[TARGET], random_state=seed)
+    return train, val, test
 
 
 def quality_gate(q: Dict[str, int], cfg: Dict) -> Dict:
@@ -127,11 +145,7 @@ def main() -> None:
         if cfg["drop_duplicates"]:
             cleaned = cleaned.drop_duplicates()
 
-        seed = params["seed"]
-        train, rest = train_test_split(cleaned, test_size=cfg["val_size"] + cfg["test_size"],
-                                       stratify=cleaned[TARGET], random_state=seed)
-        rel_test = cfg["test_size"] / (cfg["val_size"] + cfg["test_size"])
-        val, test = train_test_split(rest, test_size=rel_test, stratify=rest[TARGET], random_state=seed)
+        train, val, test = split_data(cleaned, cfg["val_size"], cfg["test_size"], params["seed"])
 
         DATA_PROCESSED.mkdir(parents=True, exist_ok=True)
         for name, part in (("train", train), ("val", val), ("test", test)):

@@ -56,7 +56,7 @@ The code is **object-oriented where there is state or substitutable behaviour** 
 
 ## 5. Lifecycle (AIOps)
 
-1. **Develop:** change code or `params.yaml` -> `scripts/ci.sh` (lint, 72 tests, `dvc repro`, metrics diff).
+1. **Develop:** change code or `params.yaml` -> `scripts/ci.sh` (lint, 73 tests, `dvc repro`, metrics diff).
 2. **Train:** DVC runs only the affected stages; every run is in MLflow with the Git commit.
 3. **Gate:** the evaluate stage registers the model as `@champion` only if acceptance criteria hold.
 4. **Deploy:** `docker compose up -d --build`; `models/` is mounted into the model server.

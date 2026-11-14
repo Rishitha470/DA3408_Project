@@ -6,7 +6,7 @@ import pytest
 from src.common.schema import ALL_COLUMNS, TARGET
 from src.data.ingest import load_source
 from src.data.process import (DataQualityError, batch_quality, clean_batch, invalid_mask,
-                              quality_gate, run_ray_pipeline)
+                              quality_gate, run_ray_pipeline, split_data)
 
 GATE = {"min_rows": 10, "max_invalid_fraction": 0.05, "min_positive_rate": 0.02, "max_positive_rate": 0.5}
 
@@ -62,6 +62,19 @@ def test_quality_gate(q, ok):
     else:
         with pytest.raises(DataQualityError):
             quality_gate(q, GATE)
+
+
+def test_split_is_reproducible_regardless_of_row_order(synthetic_df):
+    """Reproducibility: Ray may return rows in a different order on each run; the seeded split
+    must still select exactly the same rows for train, validation and test."""
+    data = clean_batch(synthetic_df.head(2000))
+    shuffled = data.sample(frac=1.0, random_state=7)
+    first = split_data(data, 0.15, 0.15, seed=42)
+    second = split_data(shuffled, 0.15, 0.15, seed=42)
+    for a, b in zip(first, second):
+        pd.testing.assert_frame_equal(a.reset_index(drop=True), b.reset_index(drop=True))
+    train, val, test = first
+    assert len(train) + len(val) + len(test) == len(data)
 
 
 def test_ingest_synthetic_source_has_schema():

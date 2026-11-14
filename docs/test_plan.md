@@ -66,6 +66,7 @@ The model is registered as `@champion` only when AC2-AC4 hold (automatic gate).
 | TC-DATA-07 | test_data_pipeline | synthetic ingest matches schema | 22 columns |
 | TC-DATA-08 | test_data_pipeline | unknown data source rejected | ValueError |
 | TC-DATA-09 | test_data_pipeline | Ray pipeline end to end with bad rows | 506 in, 4 invalid, 502 out |
+| TC-DATA-10 | test_data_pipeline | seeded split identical when rows arrive in a different order (Ray) | same train/val/test rows |
 | TC-MOD-01 | test_modeling | LR, RF, XGBoost each train and predict | scores in [0, 1] |
 | TC-MOD-02 | test_modeling | unknown model type rejected | ValueError |
 | TC-MOD-03 | test_modeling | higher beta gives recall >= lower beta | holds |
@@ -100,7 +101,7 @@ The model is registered as `@champion` only when AC2-AC4 hold (automatic gate).
 | TC-API-19 | test_api | MLflow client connection error | PredictorError |
 | TC-API-20 | test_api | invalid INFERENCE_MODE | ValueError |
 
-Parametrised cases expand this list to 72 executed tests (see `docs/test_report.md`).
+Parametrised cases expand this list to 73 executed tests (see `docs/test_report.md`).
 
 ## 5. System test checklist (Docker)
 
