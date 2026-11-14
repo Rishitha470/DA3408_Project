@@ -148,7 +148,7 @@ MLflow Project entry point `mlflow run . -e test` and inside `scripts/ci.sh`.
 | AC5 | PASS | TC-API-05..09 |
 | AC6 | PASS: HTTP 503 `model_unavailable` with a friendly message during a real model-server outage | TC-API-10, 11; S4 |
 | AC7 | PASS: p95 231.5 ms at 4 users | S7, HLD 8.4 |
-| AC8 | PENDING: to be run with 3 non-technical testers | section 6 |
+| AC8 | PASS: 3 of 3 non-technical testers completed the questionnaire without help | section 6 |
 
 ### 8.3 System tests
 
@@ -169,8 +169,10 @@ MLflow Project entry point `mlflow run . -e test` and inside `scripts/ci.sh`.
 | Check | Result |
 |---|---|
 | Questionnaire flow through all 6 steps, result page | PASS (manual run, screenshots 01-06) |
-| Back keeps answers | PENDING |
-| Unanswered questions highlighted, out-of-range numbers refused | PENDING |
-| Phone width (390 px) | PENDING |
-| Keyboard-only use | PENDING |
-| Backend stopped: clear error, no blank page | PENDING |
+| Back keeps answers | PASS |
+| Unanswered questions highlighted, out-of-range numbers refused | PASS |
+| Phone width (390 px, Firefox responsive mode) | PASS |
+| Keyboard-only use | PASS |
+| Backend stopped: clear error, no blank page | PASS |
+
+All checks in this section were carried out manually by the author in Firefox on the test VM.

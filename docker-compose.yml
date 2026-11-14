@@ -1,6 +1,5 @@
 # Diabetes Risk Prediction - all runtime services.
 #   docker compose up -d --build                 start everything
-#   docker compose --profile pipeline run --rm pipeline     (optional) run `dvc repro` in a container
 # Before the first start, train a model (models/ must exist) and set PREDICTION_LOG_KEY in .env.
 name: diabetes-risk
 
@@ -110,18 +109,6 @@ services:
     <<: *restart
     image: prom/node-exporter:v1.8.1
     ports: ["9100:9100"]
-
-  pipeline:                                 # optional, only with --profile pipeline
-    profiles: ["pipeline"]
-    build: { context: ., dockerfile: docker/pipeline.Dockerfile }
-    image: diabetes-risk/pipeline:1.0
-    depends_on: { mlflow: { condition: service_healthy } }
-    environment:
-      MLFLOW_TRACKING_URI: http://mlflow:5000
-    shm_size: 2gb                           # Ray uses shared memory
-    working_dir: /workspace
-    volumes: [".:/workspace"]
-    command: dvc repro
 
 volumes:
   mlflow-data:

@@ -1,5 +1,5 @@
 # All tunable settings of the pipeline. DVC tracks these: changing a value re-runs only the
-# stages that depend on it (dvc repro / dvc exp run --set-param train.threshold_beta=1.5).
+# stages that depend on it (dvc repro).
 seed: 42
 
 data:

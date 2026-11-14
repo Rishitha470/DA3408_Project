@@ -3,7 +3,6 @@
 #   dvc dag              show the DAG
 #   dvc metrics show     test metrics / data quality
 #   dvc plots show       ROC, precision-recall, confusion matrix
-#   dvc exp run --set-param train.threshold_beta=1.5     experiment with a parameter
 stages:
   ingest:
     cmd: python -m src.data.ingest

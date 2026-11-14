@@ -4,7 +4,7 @@
 
 ```mermaid
 flowchart LR
-  subgraph Offline["Offline: training pipeline (DVC DAG, run on host or in the pipeline container)"]
+  subgraph Offline["Offline: training pipeline (DVC DAG, run on the host)"]
     UCI[(UCI / CDC dataset<br/>253,680 rows)] --> ING[ingest]
     ING --> PRO["process<br/>(Ray Data: validate, clean, split)"]
     PRO --> TRN["train<br/>(LR, RF, XGBoost)"]
@@ -75,8 +75,7 @@ Measured on the test VM (6 vCPUs): median 32 ms and p95 44 ms per prediction for
 | alertmanager | `prom/alertmanager:v0.27.0` | 9093 | - | nobody |
 | grafana | `grafana/grafana:11.1.0` | 3000 | - | grafana |
 | node-exporter | `prom/node-exporter:v1.8.1` | 9100 | - | nobody |
-| pipeline (optional profile) | `diabetes-risk/pipeline` | - | - | root |
 
 The backend starts only after the model server is healthy (`depends_on: service_healthy`). Training runs
-outside these services (`dvc repro` on the host, or the optional `pipeline` container) and hands over the model
+outside these services (`dvc repro` on the host, logging to the MLflow container) and hands over the model
 through the DVC-tracked `models/` folder, which is mounted read-only into the model server and the backend.

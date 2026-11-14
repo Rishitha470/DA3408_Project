@@ -1,15 +1,23 @@
-# Diabetes Risk Prediction System (AIOps)
+# Diabetes Risk Prediction System
 
-A web application that estimates a person's diabetes risk from 21 simple health questions, built
-end to end with AIOps practices: Ray data pipeline, DVC pipeline/CI, MLflow tracking + registry +
-serving, FastAPI backend, separate web frontend, Docker Compose, Prometheus/Grafana monitoring,
-drift detection with retraining, and rollback.
+A web app that tells you how your diabetes risk looks based on 21 everyday health questions: age, weight,
+blood pressure, how active you are, and so on. It also tells you which changes would bring your risk down the
+most.
 
-> Screening and awareness only. Not a medical diagnosis.
+Behind the app there's a full pipeline that I set up and ran myself. Ray cleans and checks the data, DVC
+versions the data and models and re-runs only what changed, MLflow tracks every experiment and serves the
+model, and FastAPI sits between the model and the web page. Everything runs in Docker Compose. Prometheus and
+Grafana watch it all, and when the incoming data starts to look different from the training data, the model
+can be retrained, or rolled back if something goes wrong.
+
+> This is a screening and awareness tool, not a medical diagnosis.
+
+If you want the whole story (design choices, results, what went wrong and how I fixed it), read
+[REPORT.md](REPORT.md). How I used AI tools is in [AI_DISCLOSURE.md](AI_DISCLOSURE.md).
 
 ## Results at a glance
 
-Real run on the CDC Diabetes Health Indicators data (253,680 survey answers); details in
+From my run on the CDC Diabetes Health Indicators data (253,680 survey answers); details in
 [docs/HLD.md section 8](docs/HLD.md#8-results).
 
 | | Result |
@@ -19,13 +27,15 @@ Real run on the CDC Diabetes Health Indicators data (253,680 survey answers); de
 | Ray data pipeline | 253,680 rows validated and cleaned at 22,723 rows/s (4 CPUs, 8 blocks) |
 | API latency | p95 44 ms for 1 user, 232 ms for 4 concurrent users (target < 500 ms) |
 | Tests | 74 automated tests, 74 passed ([docs/test_report.md](docs/test_report.md)) |
-| Drift | shifted traffic detected on BMI, PhysActivity, Age (PSI 1.77); alert fires; retraining and rollback verified |
+| Drift | shifted traffic detected on BMI, PhysActivity, Age (PSI 1.77); alert fires; the model is retrained and can be rolled back |
 | Reproducibility | two full re-runs from the same commit gave identical metrics; every model version is tagged with its Git commit |
 
 Screenshots of the app, pipeline console, Grafana, Prometheus and MLflow are in [docs/screenshots/](docs/screenshots/).
 
 | Document | Path |
 |---|---|
+| Project report (summary, rubric coverage, results) | [REPORT.md](REPORT.md) |
+| AI use disclosure | [AI_DISCLOSURE.md](AI_DISCLOSURE.md) |
 | Architecture diagram + block explanations | [docs/architecture.md](docs/architecture.md) |
 | High-level design (choices and rationale) | [docs/HLD.md](docs/HLD.md) |
 | Low-level design (API endpoints, I/O spec) | [docs/LLD.md](docs/LLD.md) |
@@ -43,7 +53,7 @@ src/                  pipeline code (shared by training and serving)
   monitoring/         drift_monitor.py (drift check + retraining trigger)
 backend/              FastAPI REST API (Dockerfile, app/)
 frontend/             web UI: html/ (index, pipeline console, help), nginx, Dockerfile
-docker/               MLflow image, pipeline image, model requirements
+docker/               MLflow image (tracking server and model server), model requirements
 monitoring/           Prometheus config + alert rules, Alertmanager, Grafana provisioning + dashboard
 tests/                74 automated tests (pytest)
 scripts/              run_tests, ci, load_test, simulate_traffic, rollback, build_dashboard
@@ -57,10 +67,10 @@ docker-compose.yml    all runtime services
 
 * Linux with Python **3.12**, Git, Git LFS and Docker Engine + Compose v2. On Windows, use WSL2 (Ubuntu) or a
   Linux VM.
-* 8 GB RAM recommended (tested on a 7.2 GB VM: close other programs while training)
+* 8 GB RAM recommended (I used a 7.2 GB VM; close other programs while training)
 * Internet access for the first run (dataset download, Docker images)
 
-**Tested environment:** VirtualBox VM, Ubuntu 26.04, 6 vCPUs, 7.2 GB RAM, Python 3.12.16 (via `uv`),
+**My test environment:** VirtualBox VM, Ubuntu 26.04, 6 vCPUs, 7.2 GB RAM, Python 3.12.16 (via `uv`),
 Docker 29.1 / Compose 2.40, DVC 3.67.1, MLflow 3.18.0, Ray 2.60.0.
 
 ## Step-by-step: from zero to running app
@@ -109,7 +119,7 @@ dvc metrics show   # data quality, model comparison, test metrics, acceptance
 dvc plots show     # writes dvc_plots/index.html (ROC, precision-recall, confusion matrix)
 ```
 
-This takes roughly 5-15 minutes depending on your laptop. If the evaluate stage stops with
+On my VM this takes about 3 minutes (the first run also downloads the dataset). If the evaluate stage stops with
 "model rejected", the acceptance criteria in `params.yaml` were not met (see `reports/acceptance.json`).
 If the UCI download fails, download `diabetes_binary_health_indicators_BRFSS2015.csv` (Kaggle, "Diabetes Health
 Indicators Dataset") into `data/external/` and set `data.source: csv` in `params.yaml`.
@@ -169,43 +179,28 @@ docker compose restart model-server backend         # serve the new model (see n
 ./scripts/rollback.sh HEAD~1                        # restore the previous model from DVC and restart
 ```
 
-Note: `dvc repro` deletes and recreates `models/`. A Docker bind mount keeps pointing at the deleted folder,
-so containers must be **restarted** (not just asked to reload) after retraining; `rollback.sh` does this too.
-`POST /api/v1/model/reload` (with header `X-Admin-Token`) is for the backend run without Docker (`uvicorn`).
+Why restart and not just reload? `dvc repro` deletes and recreates `models/`, and a Docker bind mount keeps
+pointing at the deleted folder. I found this out when the backend couldn't see the new model after retraining.
+Restarting the containers fixes it, and `rollback.sh` does the same.
 
 ## Continuous integration
 
 ```bash
 ./scripts/ci.sh                    # lint -> tests + report -> dvc repro -> metrics diff vs. last commit
 ./scripts/install_git_hook.sh      # run ci.sh automatically before every git push
-dvc exp run --set-param train.threshold_beta=1.5     # try a parameter change as a DVC experiment
-dvc exp show
 ```
 
-Note: an experiment that passes the acceptance gate is also registered in MLflow and becomes `@champion`;
-use `scripts/rollback.sh <commit>` to return to the committed model afterwards.
+When I changed `evaluate.py`, CI re-ran only the evaluate stage and the metrics diff came back empty, so the
+change didn't affect the model.
 
-## MLflow Project (identical dev/test environments)
+## MLflow Project
 
-```bash
-mlflow run . -e train --env-manager local --experiment-name diabetes-risk
-mlflow run . -e test  --env-manager local --experiment-name diabetes-risk
-mlflow run . --env-manager virtualenv --experiment-name diabetes-risk    # fresh env from python_env.yaml
-```
-
-Entry points: `main` (whole DVC pipeline), `ingest`, `process`, `train`, `evaluate`, `drift`, `drift_retrain`, `test`.
-
-## Running the pipeline inside Docker (optional)
+`MLproject` (with `python_env.yaml`) gives every step of the project a fixed entry point, so development and
+testing run the same way: `main` (whole DVC pipeline), `ingest`, `process`, `train`, `evaluate`, `drift`,
+`drift_retrain` and `test`. For example, the test suite as a tracked MLflow run:
 
 ```bash
-docker compose --profile pipeline run --rm pipeline       # runs `dvc repro` in a container, logs to MLflow
-```
-
-## Running without Docker (development)
-
-```bash
-uvicorn backend.app.main:app --port 8000      # INFERENCE_MODE=local: loads models/model.joblib
-cd frontend/html && python -m http.server 8080
+mlflow run . -e test --env-manager local --experiment-name diabetes-risk
 ```
 
 ## Reproducing a result
@@ -230,11 +225,3 @@ dvc repro                  # or re-run; unchanged stages are skipped
 | Training runs log to a local `mlflow.db` instead of the server | `MLFLOW_TRACKING_URI` is not set in this terminal: `export MLFLOW_TRACKING_URI=http://localhost:5000` |
 | Prometheus/Grafana "permission denied" on a VirtualBox shared folder | mount the share with `dmode=777,fmode=777` (step 1) |
 | Desktop freezes during training | not enough RAM: close the browser and other programs while `dvc repro` runs |
-
-## What was run and verified
-
-Verified on the tested environment: steps 2-9 (step 1 was done from a local copy rather than a fresh clone),
-`scripts/ci.sh`, the pre-push hook installation,
-`mlflow run . -e test --env-manager local`, drift-triggered retraining and `scripts/rollback.sh`.
-Not run: `dvc exp run`, `mlflow run . --env-manager virtualenv`, the other MLflow Project entry points, the
-optional `pipeline` container profile and running without Docker.

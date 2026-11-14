@@ -1,6 +1,5 @@
 # MLflow Project: identical, reproducible entry points for development and test environments.
-#   mlflow run . -e train --env-manager local --experiment-name diabetes-risk
-#   mlflow run . --env-manager virtualenv --experiment-name diabetes-risk      (fresh isolated env from python_env.yaml)
+#   mlflow run . -e test --env-manager local --experiment-name diabetes-risk
 # Always pass --experiment-name diabetes-risk (the experiment the code logs to).
 name: diabetes-risk-prediction
 
