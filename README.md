@@ -13,7 +13,7 @@ can be retrained, or rolled back if something goes wrong.
 > This is a screening and awareness tool, not a medical diagnosis.
 
 If you want the whole story (design choices, results, what went wrong and how I fixed it), read
-[REPORT.md](REPORT.md). How I used AI tools is in [AI_DISCLOSURE.md](AI_DISCLOSURE.md).
+[REPORT.md](REPORT.md). How I used AI tools is in [AI_DISCLOSURE.md](AI_DISCLOSURE.md) and the video link: https://drive.google.com/drive/folders/15QZQbVicVSLxDU9vpHpoal7IX2hdJPWu?usp=sharing.
 
 ## Results at a glance
 
